@@ -55,6 +55,20 @@ if st.button("🚀 Generar Reporte"):
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
             doc = DocxTemplate(word_file)
+            # =========================
+            # TOTALES REALES DESDE ACTIVIDAD
+            # =========================
+
+            actividad = (
+            df['Actividad']
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            )
+
+            total_controles = (actividad == 'CONTROL').sum()
+            total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
+
 
             # cálculos base
             df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
@@ -116,6 +130,8 @@ if st.button("🚀 Generar Reporte"):
                 'total_escn': total_escn,
                 'especialidades': tabla.to_dict(orient='records'),
                 'total_general_control': int(tabla['cantidad'].sum())
+                'total_controles': int(total_controles),
+                'total_consultas_nuevas': int(total_consultas_nuevas),
             }
 
             doc.render(contexto)
