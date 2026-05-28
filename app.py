@@ -75,6 +75,19 @@ if st.button("🚀 Generar Reporte"):
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
+            df['Funcionario'] = (
+            df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
+            df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
+            df['Apellido Mat'].fillna('').astype(str).str.strip()
+            ).str.replace(r'\s+', ' ', regex=True).str.strip()
+            tabla_funcionarios = (
+            df[df['Es_control'] == 1]
+            .groupby(['Especialidad', 'Funcionario'])
+            .size()
+            .reset_index(name='total')
+            .sort_values(by='total', ascending=False)
+             )
+            'tabla_funcionarios': tabla_funcionarios.to_dict(orient='records'),
             # =========================
             # PORCENTAJES DE ERROR
             # =========================
