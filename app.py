@@ -9,6 +9,7 @@ st.title("📊 Generador de Reportes Médicos")
 
 st.write("Sube los archivos para generar el reporte automáticamente")
 
+# 📂 Subida de archivos
 datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
@@ -17,19 +18,19 @@ word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
 # ---------------- FUNCIONES ----------------
 
 def calcular_controlycn(fila):
-    actividad = str(fila.get('Actividad','')).strip()
-    Ic = str(fila.get('Ic Asoc Hora','')).strip()
+    actividad = str(fila.get('Actividad', '')).strip()
+    ic = str(fila.get('Ic Asoc Hora', '')).strip()
 
-    rEs_control = 1 if (actividad == 'CONSULTA NUEVA' and Ic == '-') else 0
-    rEs_CN = 1 if (actividad == 'CONTROL' and Ic != '-') else 0
+    rEs_control = 1 if (actividad == 'CONSULTA NUEVA' and ic == '-') else 0
+    rEs_cn = 1 if (actividad == 'CONTROL' and ic != '-') else 0
 
-    return pd.Series([rEs_control, rEs_CN])
+    return pd.Series([rEs_control, rEs_cn])
 
 
 def limpiar_rut_definitivo(rut):
     rut = str(rut).strip()
     if "-" in rut:
-        rut = rut[:rut.find("-")]
+        rut = rut.split("-")[0]
     return rut.replace(".", "")
 
 
@@ -50,16 +51,17 @@ if st.button("🚀 Generar Reporte"):
     if datos_file and lp_file and word_file:
 
         try:
+            # ---------------- LEER ARCHIVOS ----------------
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
             doc = DocxTemplate(word_file)
 
-            # cálculos
-            df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
+            # ---------------- CÁLCULOS ----------------
+            df[['Es_control', 'Es_cn']] = df.apply(calcular_controlycn, axis=1)
 
-            total_escontrol = int(df['Es_control'].sum())
-            total_escn = int(df['Es_CN'].sum())
+            total_control = int(df['Es_control'].sum())
+            total_cn = int(df['Es_cn'].sum())
 
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
@@ -69,8 +71,8 @@ if st.button("🚀 Generar Reporte"):
 
             df = pd.merge(
                 df,
-                lp[['rut_puente','esp_puente','Num Interconsulta']],
-                on=['rut_puente','esp_puente'],
+                lp[['rut_puente', 'esp_puente', 'Num Interconsulta']],
+                on=['rut_puente', 'esp_puente'],
                 how='left'
             )
 
@@ -78,29 +80,32 @@ if st.button("🚀 Generar Reporte"):
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
             total_inter = int(df['Interconsulta_Valida'].sum())
-            resultado_final = total_escontrol - total_inter
+            resultado_final = total_control - total_inter
 
+            # ---------------- TABLA RESUMEN ----------------
             df_controles = df[df['Es_control'] == 1]
             tabla = df_controles.groupby("Especialidad").size().reset_index(name="cantidad")
 
-            # ---------------- 🔥 FIX WORD ----------------
-
+            # ---------------- CONTEXTO WORD ----------------
             filas = df.to_dict(orient='records')
             especialidades = tabla.to_dict(orient='records')
 
             contexto = {
                 "filas": filas,
-                "total_control": total_escontrol,
-                "total_escn": total_escn,
+                "total_control": total_control,
+                "total_cn": total_cn,
                 "especialidades": especialidades,
                 "total_general_control": int(tabla["cantidad"].sum())
             }
 
-            # 🔥 DEBUG IMPORTANTE (déjalo mientras pruebas)
-            st.write("DEBUG contexto Word:", contexto)
+            # 🔥 DEBUG (ordenado)
+            st.subheader("🔍 Debug contexto Word")
+            st.json(contexto)
 
+            # ---------------- RENDER WORD ----------------
             doc.render(contexto)
 
+            # ---------------- GUARDAR ARCHIVO ----------------
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 doc.save(tmp.name)
 
@@ -113,13 +118,15 @@ if st.button("🚀 Generar Reporte"):
                         file_name="Reporte_Actividades.docx"
                     )
 
+            # ---------------- RESULTADOS ----------------
             st.subheader("📊 Resultados")
-            st.write("Control:", total_escontrol)
-            st.write("CN:", total_escn)
+            st.write("Control:", total_control)
+            st.write("CN:", total_cn)
             st.write("Interconsultas:", total_inter)
             st.write("Resultado final:", resultado_final)
 
-            st.dataframe(tabla)
+            st.subheader("📌 Resumen por especialidad")
+            st.dataframe(tabla, use_container_width=True)
 
         except Exception as e:
             st.error(f"Error: {e}")
