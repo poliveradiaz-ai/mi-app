@@ -129,7 +129,7 @@ if st.button("🚀 Generar Reporte"):
                 'total_control': total_escontrol,
                 'total_escn': total_escn,
                 'especialidades': tabla.to_dict(orient='records'),
-                'total_general_control': int(tabla['cantidad'].sum())
+                'total_general_control': int(tabla['cantidad'].sum()),
                 'total_controles': int(total_controles),
                 'total_consultas_nuevas': int(total_consultas_nuevas),
             }
