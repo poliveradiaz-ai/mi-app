@@ -75,6 +75,19 @@ if st.button("🚀 Generar Reporte"):
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
+            # =========================
+            # PORCENTAJES DE ERROR
+            # =========================
+
+            porc_escontrol_vs_controles = (
+            (total_escontrol / total_controles) * 100
+            if total_controles > 0 else 0
+            )
+
+            porc_escontrol_vs_cn = (
+            (total_escontrol / total_consultas_nuevas) * 100
+            if total_consultas_nuevas > 0 else 0
+            )
 
             # RUT
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
@@ -132,6 +145,8 @@ if st.button("🚀 Generar Reporte"):
                 'total_general_control': int(tabla['cantidad'].sum()),
                 'total_controles': int(total_controles),
                 'total_consultas_nuevas': int(total_consultas_nuevas),
+                'porc_escontrol_vs_controles': round(porc_escontrol_vs_controles, 2),
+                'porc_escontrol_vs_cn': round(porc_escontrol_vs_cn, 2),
             }
 
             doc.render(contexto)
