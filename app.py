@@ -139,8 +139,8 @@ if st.button("🚀 Generar Reporte"):
 
             contexto = {
                 'filas': df.to_dict(orient='records'),
-                'total_control': total_escontrol,
-                'total_escn': total_escn,
+                'total_es_control': total_escontrol,
+                'total_es_cn': total_escn,
                 'especialidades': tabla.to_dict(orient='records'),
                 'total_general_control': int(tabla['cantidad'].sum()),
                 'total_controles': int(total_controles),
