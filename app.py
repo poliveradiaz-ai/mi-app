@@ -155,7 +155,7 @@ if st.button("🚀 Generar Reporte"):
             # =========================
             # RESUMEN ESPECIALIDADES
             # =========================
-            df_controles = df[df['Es_control'] == 1]
+            df_controles = df[df['Error_Final'] == 1]
 
             tabla = (
                 df_controles
