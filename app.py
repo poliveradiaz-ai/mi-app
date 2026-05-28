@@ -87,7 +87,7 @@ if st.button("🚀 Generar Reporte"):
             .reset_index(name='total')
             .sort_values(by='total', ascending=False)
              )
-            'tabla_funcionarios': tabla_funcionarios.to_dict(orient='records'),
+            
             # =========================
             # PORCENTAJES DE ERROR
             # =========================
@@ -160,6 +160,7 @@ if st.button("🚀 Generar Reporte"):
                 'total_consultas_nuevas': int(total_consultas_nuevas),
                 'porc_escontrol_vs_controles': round(porc_escontrol_vs_controles, 2),
                 'porc_escontrol_vs_cn': round(porc_escontrol_vs_cn, 2),
+                'tabla_funcionarios': tabla_funcionarios.to_dict(orient='records'),
             }
 
             doc.render(contexto)
