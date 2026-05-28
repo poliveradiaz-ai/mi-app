@@ -30,7 +30,7 @@ def calcular_controlycn(fila):
 def limpiar_rut_definitivo(rut):
     rut = str(rut).strip()
     if "-" in rut:
-        rut = rut[:rut.find("-")]
+        rut = rut.split("-")[0]
     return rut.replace(".", "")
 
 
@@ -38,6 +38,11 @@ def marcar_interconsulta_valida(fila):
     actividad = str(fila.get('Actividad', '')).strip().upper()
     ic_asoc = str(fila.get('Ic Asoc Hora', '')).strip()
     num_ic = fila.get('Num Interconsulta', 0)
+
+    try:
+        num_ic = float(num_ic)
+    except:
+        num_ic = 0
 
     if actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0:
         return 1
@@ -51,59 +56,46 @@ if st.button("🚀 Generar Reporte"):
     if datos_file and lp_file and word_file:
 
         try:
-            # leer archivos
+            # =========================
+            # LEER ARCHIVOS
+            # =========================
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
             doc = DocxTemplate(word_file)
-            # =========================
-            # TOTALES REALES DESDE ACTIVIDAD
-            # =========================
 
+            # =========================
+            # TOTALES REALES
+            # =========================
             actividad = (
-            df['Actividad']
-            .astype(str)
-            .str.strip()
-            .str.upper()
+                df['Actividad']
+                .astype(str)
+                .str.strip()
+                .str.upper()
             )
 
             total_controles = (actividad == 'CONTROL').sum()
             total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-
-            # cálculos base
+            # =========================
+            # ES_CONTROL / ES_CN
+            # =========================
             df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
+
+            # =========================
+            # FUNCIONARIO COMPLETO
+            # =========================
             df['Funcionario'] = (
-            df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
-            df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
-            df['Apellido Mat'].fillna('').astype(str).str.strip()
+                df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
+                df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
+                df['Apellido Mat'].fillna('').astype(str).str.strip()
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
-            df['Error_Final'] = df['Es_control'] - df['Interconsulta_Valida']
-            df['Error_Final'] = df['Error_Final'].apply(lambda x: 1 if x > 0 else 0)
-            tabla_funcionarios = (
-            df[df['Error_Final'] == 1]
-            .groupby(['Especialidad', 'Funcionario'])
-            .size()
-            .reset_index(name='total')
-            .sort_values(by='total', ascending=False)
-             )
+
             # =========================
-            # PORCENTAJES DE ERROR
+            # RUT + MERGE
             # =========================
-
-            porc_escontrol_vs_controles = (
-            (total_escontrol / total_controles) * 100
-            if total_controles > 0 else 0
-            )
-
-            porc_escontrol_vs_cn = (
-            (total_escontrol / total_consultas_nuevas) * 100
-            if total_consultas_nuevas > 0 else 0
-            )
-
-            # RUT
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
@@ -118,13 +110,36 @@ if st.button("🚀 Generar Reporte"):
             )
 
             df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
+
+            # =========================
+            # INTERCONSULTA VALIDA (IMPORTANTE ANTES DE ERROR FINAL)
+            # =========================
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
             total_inter = int(df['Interconsulta_Valida'].sum())
+
             resultado_final = total_escontrol - total_inter
 
-            # ---------------- NORMALIZAR ESPECIALIDADES ----------------
+            # =========================
+            # ERROR FINAL
+            # =========================
+            df['Error_Final'] = (df['Es_control'] - df['Interconsulta_Valida'])
+            df['Error_Final'] = (df['Error_Final'] > 0).astype(int)
 
+            # =========================
+            # TABLA FUNCIONARIOS (SEGÚN ERROR FINAL)
+            # =========================
+            tabla_funcionarios = (
+                df[df['Error_Final'] == 1]
+                .groupby(['Especialidad', 'Funcionario'])
+                .size()
+                .reset_index(name='total')
+                .sort_values(by='total', ascending=False)
+            )
+
+            # =========================
+            # NORMALIZAR ESPECIALIDADES
+            # =========================
             reemplazos_especialidad = {
                 'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
                 'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA'
@@ -137,8 +152,9 @@ if st.button("🚀 Generar Reporte"):
                 .replace(reemplazos_especialidad)
             )
 
-            # ---------------- RESUMEN ESPECIALIDADES ----------------
-
+            # =========================
+            # RESUMEN ESPECIALIDADES
+            # =========================
             df_controles = df[df['Es_control'] == 1]
 
             tabla = (
@@ -149,24 +165,48 @@ if st.button("🚀 Generar Reporte"):
                 .sort_values(by="cantidad", ascending=False)
             )
 
-            # ---------------- CONTEXTO WORD ----------------
+            # =========================
+            # PORCENTAJES (AL FINAL)
+            # =========================
+            porc_escontrol_vs_controles = (
+                (total_escontrol / total_controles) * 100
+                if total_controles > 0 else 0
+            )
 
+            porc_escontrol_vs_cn = (
+                (total_escontrol / total_consultas_nuevas) * 100
+                if total_consultas_nuevas > 0 else 0
+            )
+
+            # =========================
+            # CONTEXTO WORD
+            # =========================
             contexto = {
                 'filas': df.to_dict(orient='records'),
+
                 'total_es_control': total_escontrol,
                 'total_es_cn': total_escn,
-                'especialidades': tabla.to_dict(orient='records'),
-                'total_general_control': int(tabla['cantidad'].sum()),
+
                 'total_controles': int(total_controles),
                 'total_consultas_nuevas': int(total_consultas_nuevas),
+
+                'total_inter': total_inter,
+                'resultado_final': resultado_final,
+
+                'especialidades': tabla.to_dict(orient='records'),
+                'total_general_control': int(tabla['cantidad'].sum()),
+
                 'porc_escontrol_vs_controles': round(porc_escontrol_vs_controles, 2),
                 'porc_escontrol_vs_cn': round(porc_escontrol_vs_cn, 2),
+
                 'tabla_funcionarios': tabla_funcionarios.to_dict(orient='records'),
             }
 
             doc.render(contexto)
 
-            # guardar temporal
+            # =========================
+            # DESCARGA WORD
+            # =========================
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 doc.save(tmp.name)
 
@@ -179,7 +219,9 @@ if st.button("🚀 Generar Reporte"):
                         file_name="Reporte_Actividades.docx"
                     )
 
-            # mostrar resultados
+            # =========================
+            # RESULTADOS
+            # =========================
             st.subheader("📊 Resultados")
 
             col1, col2, col3, col4 = st.columns(4)
@@ -196,4 +238,3 @@ if st.button("🚀 Generar Reporte"):
 
     else:
         st.warning("Debes subir los 3 archivos")
-
