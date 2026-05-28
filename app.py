@@ -80,14 +80,15 @@ if st.button("🚀 Generar Reporte"):
             df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
             df['Apellido Mat'].fillna('').astype(str).str.strip()
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
+            df['Error_Final'] = df['Es_control'] - df['Interconsulta_Valida']
+            df['Error_Final'] = df['Error_Final'].apply(lambda x: 1 if x > 0 else 0)
             tabla_funcionarios = (
-            df[df['Es_control'] == 1]
+            df[df['Error_Final'] == 1]
             .groupby(['Especialidad', 'Funcionario'])
             .size()
             .reset_index(name='total')
             .sort_values(by='total', ascending=False)
              )
-            
             # =========================
             # PORCENTAJES DE ERROR
             # =========================
