@@ -7,15 +7,10 @@ st.set_page_config(page_title="Reporte Cuadratura", layout="centered")
 
 st.title("📊 Generador de Reportes Médicos")
 
-st.write("Sube los archivos para generar el reporte automáticamente")
-
-# 📂 Subida de archivos
 datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
 
-
-# ---------------- FUNCIONES ----------------
 
 def calcular_controlycn(fila):
     actividad = str(fila.get('Actividad','')).strip()
@@ -39,30 +34,24 @@ def marcar_interconsulta_valida(fila):
     ic_asoc = str(fila.get('Ic Asoc Hora', '')).strip()
     num_ic = fila.get('Num Interconsulta', 0)
 
-    if actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0:
-        return 1
-    return 0
+    return 1 if (actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0) else 0
 
-
-# ---------------- EJECUCIÓN ----------------
 
 if st.button("🚀 Generar Reporte"):
 
     if datos_file and lp_file and word_file:
 
         try:
-            # leer archivos
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
+
             doc = DocxTemplate(word_file)
 
-            # cálculos base
             df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
 
-            # RUT
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
@@ -82,21 +71,23 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado_final = total_escontrol - total_inter
 
-            # resumen especialidades
             df_controles = df[df['Es_control'] == 1]
             tabla = df_controles.groupby("Especialidad").size().reset_index(name="cantidad")
 
+            # 🔥 DEBUG CLAVE
+            st.write("PREVIEW FILAS WORD:")
+            st.dataframe(df.head())
+
             contexto = {
-                'filas': df.to_dict(orient='records'),
-                'total_control': total_escontrol,
-                'total_escn': total_escn,
-                'especialidades': tabla.to_dict(orient='records'),
-                'total_general_control': int(tabla['cantidad'].sum())
+                "filas": df.to_dict(orient="records"),
+                "total_control": total_escontrol,
+                "total_escn": total_escn,
+                "especialidades": tabla.to_dict(orient="records"),
+                "total_general_control": int(tabla['cantidad'].sum())
             }
 
             doc.render(contexto)
 
-            # guardar temporal
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 doc.save(tmp.name)
 
@@ -108,15 +99,6 @@ if st.button("🚀 Generar Reporte"):
                         f,
                         file_name="Reporte_Actividades.docx"
                     )
-
-            # mostrar resultados
-            st.subheader("📊 Resultados")
-            st.write("Control:", total_escontrol)
-            st.write("CN:", total_escn)
-            st.write("Interconsultas:", total_inter)
-            st.write("Resultado final:", resultado_final)
-
-            st.dataframe(tabla)
 
         except Exception as e:
             st.error(f"Error: {e}")
