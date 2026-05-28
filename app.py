@@ -82,9 +82,33 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado_final = total_escontrol - total_inter
 
-            # resumen especialidades
+            # ---------------- NORMALIZAR ESPECIALIDADES ----------------
+
+            reemplazos_especialidad = {
+                'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
+                'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA'
+            }
+
+            df['Especialidad'] = (
+                df['Especialidad']
+                .astype(str)
+                .str.strip()
+                .replace(reemplazos_especialidad)
+            )
+
+            # ---------------- RESUMEN ESPECIALIDADES ----------------
+
             df_controles = df[df['Es_control'] == 1]
-            tabla = df_controles.groupby("Especialidad").size().reset_index(name="cantidad")
+
+            tabla = (
+                df_controles
+                .groupby("Especialidad")
+                .size()
+                .reset_index(name="cantidad")
+                .sort_values(by="cantidad", ascending=False)
+            )
+
+            # ---------------- CONTEXTO WORD ----------------
 
             contexto = {
                 'filas': df.to_dict(orient='records'),
@@ -111,10 +135,13 @@ if st.button("🚀 Generar Reporte"):
 
             # mostrar resultados
             st.subheader("📊 Resultados")
-            st.write("Control:", total_escontrol)
-            st.write("CN:", total_escn)
-            st.write("Interconsultas:", total_inter)
-            st.write("Resultado final:", resultado_final)
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            col1.metric("Control", total_escontrol)
+            col2.metric("CN", total_escn)
+            col3.metric("Interconsultas", total_inter)
+            col4.metric("Resultado", resultado_final)
 
             st.dataframe(tabla)
 
@@ -123,3 +150,4 @@ if st.button("🚀 Generar Reporte"):
 
     else:
         st.warning("Debes subir los 3 archivos")
+
