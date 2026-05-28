@@ -9,7 +9,6 @@ st.title("📊 Generador de Reportes Médicos")
 
 st.write("Sube los archivos para generar el reporte automáticamente")
 
-# 📂 Subida de archivos
 datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
@@ -51,18 +50,17 @@ if st.button("🚀 Generar Reporte"):
     if datos_file and lp_file and word_file:
 
         try:
-            # leer archivos
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
+
             doc = DocxTemplate(word_file)
 
-            # cálculos base
+            # cálculos
             df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
 
-            # RUT
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
@@ -82,21 +80,27 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado_final = total_escontrol - total_inter
 
-            # resumen especialidades
             df_controles = df[df['Es_control'] == 1]
             tabla = df_controles.groupby("Especialidad").size().reset_index(name="cantidad")
 
+            # ---------------- 🔥 FIX WORD ----------------
+
+            filas = df.to_dict(orient='records')
+            especialidades = tabla.to_dict(orient='records')
+
             contexto = {
-                'filas': df.to_dict(orient='records'),
-                'total_control': total_escontrol,
-                'total_escn': total_escn,
-                'especialidades': tabla.to_dict(orient='records'),
-                'total_general_control': int(tabla['cantidad'].sum())
+                "filas": filas,
+                "total_control": total_escontrol,
+                "total_escn": total_escn,
+                "especialidades": especialidades,
+                "total_general_control": int(tabla["cantidad"].sum())
             }
+
+            # 🔥 DEBUG IMPORTANTE (déjalo mientras pruebas)
+            st.write("DEBUG contexto Word:", contexto)
 
             doc.render(contexto)
 
-            # guardar temporal
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 doc.save(tmp.name)
 
@@ -109,7 +113,6 @@ if st.button("🚀 Generar Reporte"):
                         file_name="Reporte_Actividades.docx"
                     )
 
-            # mostrar resultados
             st.subheader("📊 Resultados")
             st.write("Control:", total_escontrol)
             st.write("CN:", total_escn)
