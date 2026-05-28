@@ -118,7 +118,7 @@ if st.button("🚀 Generar Reporte"):
 
             total_inter = int(df['Interconsulta_Valida'].sum())
 
-            resultado_final = total_escontrol - total_inter
+            resultado_es_control_menos_interconsulta = total_escontrol - total_inter
 
             # =========================
             # ERROR FINAL
@@ -191,7 +191,7 @@ if st.button("🚀 Generar Reporte"):
                 'total_consultas_nuevas': int(total_consultas_nuevas),
 
                 'total_inter': total_inter,
-                'resultado_final': resultado_final,
+                'resultado_es_control_menos_interconsulta': resultado_es_control_menos_interconsulta,
 
                 'especialidades': tabla.to_dict(orient='records'),
                 'total_general_control': int(tabla['cantidad'].sum()),
@@ -229,7 +229,10 @@ if st.button("🚀 Generar Reporte"):
             col1.metric("Control", total_escontrol)
             col2.metric("CN", total_escn)
             col3.metric("Interconsultas", total_inter)
-            col4.metric("Resultado", resultado_final)
+            col4.metric(
+                 "ES Control - Interconsulta",
+                 resultado_es_control_menos_interconsulta
+            )
 
             st.dataframe(tabla)
 
