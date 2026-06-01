@@ -10,7 +10,7 @@ st.title("📊 Generador de Reportes Médicos")
 st.write("Sube los archivos base y opcionalmente las plantillas")
 
 # =========================
-# ARCHIVOS BASE (OBLIGATORIOS)
+# ARCHIVOS BASE
 # =========================
 st.markdown("## 📂 Archivos base")
 
@@ -20,7 +20,42 @@ lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
 st.divider()
 
 # =========================
-# TARJETAS VISUALES PLANTILLAS
+# FUNCIONES (ORIGINALES - OBLIGATORIAS)
+# =========================
+def calcular_controlycn(fila):
+    actividad = str(fila.get('Actividad','')).strip()
+    Ic = str(fila.get('Ic Asoc Hora','')).strip()
+
+    rEs_control = 1 if (actividad == 'CONSULTA NUEVA' and Ic == '-') else 0
+    rEs_CN = 1 if (actividad == 'CONTROL' and Ic != '-') else 0
+
+    return pd.Series([rEs_control, rEs_CN])
+
+
+def limpiar_rut_definitivo(rut):
+    rut = str(rut).strip()
+    if "-" in rut:
+        rut = rut.split("-")[0]
+    return rut.replace(".", "")
+
+
+def marcar_interconsulta_valida(fila):
+    actividad = str(fila.get('Actividad', '')).strip().upper()
+    ic_asoc = str(fila.get('Ic Asoc Hora', '')).strip()
+    num_ic = fila.get('Num Interconsulta', 0)
+
+    try:
+        num_ic = float(num_ic)
+    except:
+        num_ic = 0
+
+    if actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0:
+        return 1
+    return 0
+
+
+# =========================
+# TARJETAS PLANTILLAS
 # =========================
 col1, col2 = st.columns(2)
 
@@ -28,29 +63,19 @@ with col1:
     st.markdown("""
     <div style="padding:15px;border-radius:12px;background:#e8f4ff;border-left:6px solid #1f77b4;">
         <h4>📄 Informe Preliminar 1</h4>
-        <p>Sube la plantilla del primer informe</p>
     </div>
     """, unsafe_allow_html=True)
 
-    word_file = st.file_uploader(
-        "Plantilla 1 (.docx)",
-        type=["docx"],
-        key="w1"
-    )
+    word_file = st.file_uploader("Plantilla 1 (.docx)", type=["docx"], key="w1")
 
 with col2:
     st.markdown("""
     <div style="padding:15px;border-radius:12px;background:#eaffea;border-left:6px solid #2ca02c;">
         <h4>📄 Informe Preliminar 2</h4>
-        <p>Sube la plantilla del segundo informe</p>
     </div>
     """, unsafe_allow_html=True)
 
-    preliminar2_word_file = st.file_uploader(
-        "Plantilla 2 (.docx)",
-        type=["docx"],
-        key="w2"
-    )
+    preliminar2_word_file = st.file_uploader("Plantilla 2 (.docx)", type=["docx"], key="w2")
 
 
 # =========================
@@ -62,16 +87,16 @@ if st.button("🚀 Generar Reporte"):
 
         try:
             # =========================
-            # LEER ARCHIVOS (ORIGINAL)
+            # LECTURA
             # =========================
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
             doc = DocxTemplate(word_file) if word_file else None
-            doc_preliminar2 = DocxTemplate(preliminar2_word_file) if preliminar2_word_file else None
+            doc2 = DocxTemplate(preliminar2_word_file) if preliminar2_word_file else None
 
             # =========================
-            # TOTALES REALES (ORIGINAL)
+            # TOTALES (ORIGINAL)
             # =========================
             actividad = (
                 df['Actividad']
@@ -101,7 +126,7 @@ if st.button("🚀 Generar Reporte"):
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
             # =========================
-            # RUT MERGE (ORIGINAL)
+            # RUT + MERGE (ORIGINAL)
             # =========================
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
@@ -173,12 +198,13 @@ if st.button("🚀 Generar Reporte"):
             }
 
             # =========================
-            # RENDER (SIN ROMPER NADA)
+            # RENDER WORD
             # =========================
             if doc:
                 doc.render(contexto)
-            if doc_preliminar2:
-                doc_preliminar2.render(contexto)
+
+            if doc2:
+                doc2.render(contexto)
 
             st.success("✅ Reporte generado correctamente")
 
@@ -190,9 +216,9 @@ if st.button("🚀 Generar Reporte"):
                 with open(tmp1.name, "rb") as f1:
                     colA.download_button("📥 Informe 1", f1, file_name="Informe_1.docx")
 
-            if doc_preliminar2:
+            if doc2:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
-                    doc_preliminar2.save(tmp2.name)
+                    doc2.save(tmp2.name)
                 with open(tmp2.name, "rb") as f2:
                     colB.download_button("📥 Informe 2", f2, file_name="Informe_2.docx")
 
