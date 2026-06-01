@@ -47,7 +47,7 @@ def marcar_interconsulta_valida(fila):
 
 
 # =========================
-# PRELIMINAR 1 (WORD + LISTA ESPERA)
+# PRELIMINAR 1
 # =========================
 
 def generar_preliminar_1(datos_file, lp_file, word_file):
@@ -113,12 +113,13 @@ def generar_preliminar_1(datos_file, lp_file, word_file):
 
 
 # =========================
-# PRELIMINAR 2 (WORD + SIN LISTA ESPERA)
+# PRELIMINAR 2 (MISMO EXCEL, LOGICA DISTINTA)
 # =========================
 
-def generar_preliminar_2(datos_file, word_file):
+def generar_preliminar_2(datos_file, lp_file, word_file):
 
     df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
+    lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
     doc = DocxTemplate(word_file)
 
     actividad = df['Actividad'].astype(str).str.strip().str.upper()
@@ -128,6 +129,7 @@ def generar_preliminar_2(datos_file, word_file):
 
     df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
+    # 🔴 CAMBIO CLAVE PRELIMINAR 2
     total_cn_error = int(df['Es_CN'].sum())
 
     porc_vs_controles = (
@@ -162,35 +164,32 @@ def generar_preliminar_2(datos_file, word_file):
 
 
 # =========================
-# INTERFAZ
+# INTERFAZ (MISMO INPUT PARA AMBOS)
 # =========================
+
+st.header("📑 Informes Preliminares")
 
 col1, col2 = st.columns(2)
 
-# -------------------------
-# PRELIMINAR 1
-# -------------------------
 with col1:
 
-    st.subheader("📄 Preliminar 1")
+    st.subheader("Preliminar 1")
 
     datos1 = st.file_uploader("Datos", type=["xlsx"], key="d1")
     lp1 = st.file_uploader("Lista Espera", type=["xlsx"], key="lp1")
-    word1 = st.file_uploader("Plantilla Word 1", type=["docx"], key="w1")
+    word1 = st.file_uploader("Plantilla Preliminar 1", type=["docx"], key="w1")
 
     if st.button("Generar Preliminar 1", key="b1"):
         generar_preliminar_1(datos1, lp1, word1)
 
 
-# -------------------------
-# PRELIMINAR 2
-# -------------------------
 with col2:
 
-    st.subheader("📄 Preliminar 2")
+    st.subheader("Preliminar 2")
 
     datos2 = st.file_uploader("Datos", type=["xlsx"], key="d2")
-    word2 = st.file_uploader("Plantilla Word 2", type=["docx"], key="w2")
+    lp2 = st.file_uploader("Lista Espera", type=["xlsx"], key="lp2")
+    word2 = st.file_uploader("Plantilla Preliminar 2", type=["docx"], key="w2")
 
     if st.button("Generar Preliminar 2", key="b2"):
-        generar_preliminar_2(datos2, word2)
+        generar_preliminar_2(datos2, lp2, word2)
