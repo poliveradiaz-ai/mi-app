@@ -3,22 +3,19 @@ import pandas as pd
 from docxtpl import DocxTemplate
 import tempfile
 
-st.set_page_config(page_title="Reporte Cuadratura", layout="centered")
+st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
 
-st.write("Sube los archivos para generar el reporte automáticamente")
-
-# 📂 Subida de archivos
-datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
-lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
-word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
+st.write("Sube los archivos para generar los reportes automáticamente")
 
 
-# ---------------- FUNCIONES ----------------
+# =========================
+# FUNCIONES
+# =========================
 
 def calcular_controlycn(fila):
-    actividad = str(fila.get('Actividad','')).strip()
+    actividad = str(fila.get('Actividad','')).strip().upper()
     Ic = str(fila.get('Ic Asoc Hora','')).strip()
 
     rEs_control = 1 if (actividad == 'CONSULTA NUEVA' and Ic == '-') else 0
@@ -44,200 +41,128 @@ def marcar_interconsulta_valida(fila):
     except:
         num_ic = 0
 
-    if actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0:
-        return 1
-    return 0
+    return 1 if (
+        actividad == 'CONSULTA NUEVA'
+        and ic_asoc == '-'
+        and num_ic != 0
+    ) else 0
 
 
-# ---------------- EJECUCIÓN ----------------
+# =========================
+# PRELIMINAR 1
+# =========================
 
-if st.button("🚀 Generar Reporte"):
+def generar_preliminar_1(datos_file, lp_file, word_file):
 
-    if datos_file and lp_file and word_file:
+    df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
+    lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
+    doc = DocxTemplate(word_file)
 
-        try:
-            # =========================
-            # LEER ARCHIVOS
-            # =========================
-            df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
-            lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
-            doc = DocxTemplate(word_file)
+    actividad = df['Actividad'].astype(str).str.strip().str.upper()
 
-            # =========================
-            # TOTALES REALES
-            # =========================
-            actividad = (
-                df['Actividad']
-                .astype(str)
-                .str.strip()
-                .str.upper()
-            )
+    total_controles = (actividad == 'CONTROL').sum()
+    total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-            total_controles = (actividad == 'CONTROL').sum()
-            total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
+    df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
-            # =========================
-            # ES_CONTROL / ES_CN
-            # =========================
-            df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
+    total_escontrol = int(df['Es_control'].sum())
 
-            total_escontrol = int(df['Es_control'].sum())
-            total_escn = int(df['Es_CN'].sum())
+    df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
+    lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
-            # =========================
-            # FUNCIONARIO COMPLETO
-            # =========================
-            df['Funcionario'] = (
-                df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
-                df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
-                df['Apellido Mat'].fillna('').astype(str).str.strip()
-            ).str.replace(r'\s+', ' ', regex=True).str.strip()
+    df['esp_puente'] = df['Especialidad'].str.strip().str.upper()
+    lp['esp_puente'] = lp['Especialidad Destino'].str.strip().str.upper()
 
-            # =========================
-            # RUT + MERGE
-            # =========================
-            df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
-            lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
+    df = pd.merge(
+        df,
+        lp[['rut_puente','esp_puente','Num Interconsulta']],
+        on=['rut_puente','esp_puente'],
+        how='left'
+    )
 
-            df['esp_puente'] = df['Especialidad'].str.strip().str.upper()
-            lp['esp_puente'] = lp['Especialidad Destino'].str.strip().str.upper()
+    df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
-            df = pd.merge(
-                df,
-                lp[['rut_puente','esp_puente','Num Interconsulta']],
-                on=['rut_puente','esp_puente'],
-                how='left'
-            )
+    df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
-            df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
+    total_inter = int(df['Interconsulta_Valida'].sum())
 
-            # =========================
-            # INTERCONSULTA VALIDA (IMPORTANTE ANTES DE ERROR FINAL)
-            # =========================
-            df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
+    resultado = total_escontrol - total_inter
 
-            total_inter = int(df['Interconsulta_Valida'].sum())
+    porc_1 = (resultado / total_controles * 100) if total_controles > 0 else 0
+    porc_2 = (resultado / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0
 
-            resultado_es_control_menos_interconsulta = total_escontrol - total_inter
+    st.success("Preliminar 1 listo")
 
-            # =========================
-            # ERROR FINAL
-            # =========================
-            df['Error_Final'] = (df['Es_control'] - df['Interconsulta_Valida'])
-            df['Error_Final'] = (df['Error_Final'] > 0).astype(int)
+    st.metric("Total ES Control", total_escontrol)
+    st.metric("Interconsultas", total_inter)
+    st.metric("Resultado", resultado)
+    st.write("Porcentaje vs Controles:", round(porc_1, 2), "%")
+    st.write("Porcentaje vs CN:", round(porc_2, 2), "%")
 
-            # =========================
-            # TABLA FUNCIONARIOS (SEGÚN ERROR FINAL)
-            # =========================
-            tabla_funcionarios = (
-                df[df['Error_Final'] == 1]
-                .groupby(['Especialidad', 'Funcionario'])
-                .size()
-                .reset_index(name='total')
-                .sort_values(by='total', ascending=False)
-            )
 
-            # =========================
-            # NORMALIZAR ESPECIALIDADES
-            # =========================
-            reemplazos_especialidad = {
-                'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
-                'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA'
-            }
+# =========================
+# PRELIMINAR 2
+# =========================
 
-            df['Especialidad'] = (
-                df['Especialidad']
-                .astype(str)
-                .str.strip()
-                .replace(reemplazos_especialidad)
-            )
+def generar_preliminar_2(datos_file):
 
-            # =========================
-            # RESUMEN ESPECIALIDADES
-            # =========================
-            df_controles = df[df['Error_Final'] == 1]
+    df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
 
-            tabla = (
-                df_controles
-                .groupby("Especialidad")
-                .size()
-                .reset_index(name="cantidad")
-                .sort_values(by="cantidad", ascending=False)
-            )
+    actividad = df['Actividad'].astype(str).str.strip().str.upper()
 
-            # =========================
-            # PORCENTAJES (AL FINAL)
-            # =========================
-            porc_escontrol_vs_controles = (
-               (resultado_es_control_menos_interconsulta / total_controles) * 100
-               if total_controles > 0 else 0
-            )
+    total_controles = (actividad == 'CONTROL').sum()
+    total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-            porc_escontrol_vs_cn = (
-              (resultado_es_control_menos_interconsulta / total_consultas_nuevas) * 100
-              if total_consultas_nuevas > 0 else 0
-            )
+    df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
-            # =========================
-            # CONTEXTO WORD
-            # =========================
-            contexto = {
-                'filas': df.to_dict(orient='records'),
+    total_cn_error = int(df['Es_CN'].sum())
 
-                'total_es_control': total_escontrol,
-                'total_es_cn': total_escn,
+    porc_vs_controles = (
+        (total_cn_error / total_controles) * 100
+        if total_controles > 0 else 0
+    )
 
-                'total_controles': int(total_controles),
-                'total_consultas_nuevas': int(total_consultas_nuevas),
+    porc_vs_cn = (
+        (total_cn_error / total_consultas_nuevas) * 100
+        if total_consultas_nuevas > 0 else 0
+    )
 
-                'total_inter': total_inter,
-                'resultado_es_control_menos_interconsulta': resultado_es_control_menos_interconsulta,
+    st.success("Preliminar 2 listo")
 
-                'especialidades': tabla.to_dict(orient='records'),
-                'total_general_control': int(tabla['cantidad'].sum()),
+    st.metric("Errores CONTROL + IC", total_cn_error)
+    st.write("Porcentaje vs Controles:", round(porc_vs_controles, 2), "%")
+    st.write("Porcentaje vs CN:", round(porc_vs_cn, 2), "%")
 
-                'porc_escontrol_vs_controles': round(porc_escontrol_vs_controles, 2),
-                'porc_escontrol_vs_cn': round(porc_escontrol_vs_cn, 2),
 
-                'tabla_funcionarios': tabla_funcionarios.to_dict(orient='records'),
-            }
+# =========================
+# INTERFAZ (2 COLUMNAS)
+# =========================
 
-            doc.render(contexto)
+col1, col2 = st.columns(2)
 
-            # =========================
-            # DESCARGA WORD
-            # =========================
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-                doc.save(tmp.name)
+# -------------------------
+# PRELIMINAR 1
+# -------------------------
+with col1:
 
-                st.success("✅ Reporte generado correctamente")
+    st.subheader("📄 Preliminar 1")
 
-                with open(tmp.name, "rb") as f:
-                    st.download_button(
-                        "📥 Descargar Word",
-                        f,
-                        file_name="Reporte_Actividades.docx"
-                    )
+    datos1 = st.file_uploader("Datos", type=["xlsx"], key="d1")
+    lp1 = st.file_uploader("Lista Espera", type=["xlsx"], key="lp1")
+    word1 = st.file_uploader("Plantilla", type=["docx"], key="w1")
 
-            # =========================
-            # RESULTADOS
-            # =========================
-            st.subheader("📊 Resultados")
+    if st.button("Generar Preliminar 1", key="b1"):
+        generar_preliminar_1(datos1, lp1, word1)
 
-            col1, col2, col3, col4 = st.columns(4)
 
-            col1.metric("Control", total_escontrol)
-            col2.metric("CN", total_escn)
-            col3.metric("Interconsultas", total_inter)
-            col4.metric(
-                 "ES Control - Interconsulta",
-                 resultado_es_control_menos_interconsulta
-            )
+# -------------------------
+# PRELIMINAR 2
+# -------------------------
+with col2:
 
-            st.dataframe(tabla)
+    st.subheader("📄 Preliminar 2")
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+    datos2 = st.file_uploader("Datos", type=["xlsx"], key="d2")
 
-    else:
-        st.warning("Debes subir los 3 archivos")
+    if st.button("Generar Preliminar 2", key="b2"):
+        generar_preliminar_2(datos2)
