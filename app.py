@@ -159,10 +159,21 @@ if st.button("🚀 Generar Reporte"):
             df['Error_escontrol_menos_Inter'] = (df['Error_escontrol_menos_Inter'] > 0).astype(int)
 
             df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
-
+            # =========================
+            # NORMALIZAR ESPECIALIDADES (CORRECCIÓN PEDIDA)
+            # =========================
+            df['Especialidad'] = (
+            df['Especialidad']
+            .astype(str)
+            .str.strip()
+            .replace({
+            'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
+             })
+             )
             # =========================
             # TABLAS (ORIGINAL)
             # =========================
+            
             tabla = (
                 df_controles
                 .groupby("Especialidad")
@@ -178,7 +189,9 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='total')
                 .sort_values(by='total', ascending=False)
             )
-
+                df['Especialidad'] = df['Especialidad'].astype(str).str.strip().replace({
+                'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
+                 })
             # =========================
             # CONTEXTO (ORIGINAL)
             # =========================
