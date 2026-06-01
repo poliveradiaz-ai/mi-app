@@ -13,6 +13,10 @@ st.write("Sube los archivos para generar el reporte automáticamente")
 datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
+preliminar2_word_file = st.file_uploader(
+    "Sube plantilla Informe Preliminar 2 (.docx)",
+    type=["docx"]
+)
 
 
 # ---------------- FUNCIONES ----------------
@@ -53,7 +57,7 @@ def marcar_interconsulta_valida(fila):
 
 if st.button("🚀 Generar Reporte"):
 
-    if datos_file and lp_file and word_file:
+    if datos_file and lp_file and word_file and preliminar2_word_file:
 
         try:
             # =========================
@@ -62,6 +66,7 @@ if st.button("🚀 Generar Reporte"):
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
             doc = DocxTemplate(word_file)
+            doc_preliminar2 = DocxTemplate(preliminar2_word_file)
 
             # =========================
             # TOTALES REALES
@@ -203,21 +208,32 @@ if st.button("🚀 Generar Reporte"):
             }
 
             doc.render(contexto)
+            doc_preliminar2.render(contexto)
 
             # =========================
             # DESCARGA WORD
             # =========================
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-                doc.save(tmp.name)
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
+               doc.save(tmp1.name)
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
+               doc_preliminar2.save(tmp2.name)
 
                 st.success("✅ Reporte generado correctamente")
 
-                with open(tmp.name, "rb") as f:
-                    st.download_button(
-                        "📥 Descargar Word",
-                        f,
-                        file_name="Reporte_Actividades.docx"
-                    )
+                with open(tmp1.name, "rb") as f1:
+                   st.download_button(
+                      "📥 Descargar Reporte Principal",
+                      f1,
+                      file_name="Reporte_Principal.docx"
+                   )
+               with open(tmp2.name, "rb") as f2:
+                  st.download_button(
+                     "📥 Descargar Informe Preliminar 2",
+                     f2,
+                     file_name="Informe_Preliminar_2.docx"
+                  )
 
             # =========================
             # RESULTADOS
