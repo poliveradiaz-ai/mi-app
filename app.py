@@ -118,13 +118,21 @@ if st.button("🚀 Generar Reportes"):
             # CONTEXTO WORD
             # =========================
             contexto = {
-                "total_es_control": int(total_escontrol),
-                "total_es_cn": int(total_escn),
-                "total_controles": int(total_controles),
-                "total_consultas_nuevas": int(total_consultas_nuevas),
-                "total_inter": int(total_inter),
-                "resultado": int(resultado),
-                "filas": df.to_dict("records")
+    
+                'filas': df.to_dict(orient='records'),
+
+                'total_es_control': int(total_escontrol),
+                'total_es_cn': int(total_escn),
+
+                'total_controles': int(total_controles),
+                'total_consultas_nuevas': int(total_consultas_nuevas),
+
+                'total_inter': int(total_inter),
+                'resultado': int(resultado),
+
+                'especialidades': df.groupby("Especialidad").size().reset_index(name="cantidad").to_dict(orient="records"),
+ 
+                'tabla_funcionarios': df.groupby(['Especialidad', 'Funcionario']).size().reset_index(name='total').to_dict(orient="records"),
             }
 
             # =========================
