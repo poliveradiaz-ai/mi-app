@@ -59,6 +59,7 @@ lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 df_base = None
 lp_base = None
 
+
 # =========================
 # PREPROCESAMIENTO GLOBAL
 # =========================
@@ -75,6 +76,9 @@ if datos_file and lp_file:
         sheet_name="Nomina Médico"
     )
 
+    # =========================
+    # FLAGS
+    # =========================
     df_base[['Es_control', 'Es_CN']] = df_base.apply(
         calcular_controlycn,
         axis=1
@@ -88,7 +92,9 @@ if datos_file and lp_file:
     total_escontrol = int(df_base['Es_control'].sum())
     total_cn_error = int(df_base['Es_CN'].sum())
 
-    # merge interconsultas
+    # =========================
+    # RUT + MERGE
+    # =========================
     df_base['rut_puente'] = df_base['Rut'].apply(limpiar_rut_definitivo)
     lp_base['rut_puente'] = lp_base['Rut'].apply(limpiar_rut_definitivo)
 
@@ -104,12 +110,24 @@ if datos_file and lp_file:
 
     df_base['Num Interconsulta'] = df_base['Num Interconsulta'].fillna(0)
 
+    # =========================
+    # INTERCONSULTA VALIDA
+    # =========================
     df_base['Interconsulta_Valida'] = df_base.apply(
         marcar_interconsulta_valida,
         axis=1
     )
 
     total_inter = int(df_base['Interconsulta_Valida'].sum())
+
+    # =========================
+    # 🔴 FIX CRÍTICO: ERROR_FINAL (ESTO TE FALTABA)
+    # =========================
+    df_base['Error_Final'] = (
+        df_base['Es_control'] - df_base['Interconsulta_Valida']
+    )
+
+    df_base['Error_Final'] = (df_base['Error_Final'] > 0).astype(int)
 
     resultado = total_escontrol - total_inter
 
