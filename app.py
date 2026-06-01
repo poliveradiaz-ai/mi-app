@@ -9,7 +9,7 @@ st.title("📊 Generador de Reportes Médicos")
 
 
 # =========================
-# FUNCIONES BASE
+# FUNCIONES
 # =========================
 
 def calcular_controlycn(fila):
@@ -47,149 +47,167 @@ def marcar_interconsulta_valida(fila):
 
 
 # =========================
-# PRELIMINAR 1
+# DATOS GLOBALES (1 SOLO VEZ)
 # =========================
 
-def generar_preliminar_1(datos_file, lp_file, word_file):
+st.header("📂 Carga de datos base")
 
-    df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
-    lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
-    doc = DocxTemplate(word_file)
+datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
+lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 
-    actividad = df['Actividad'].astype(str).str.strip().str.upper()
+
+# ==========================================================
+# PREPARACIÓN GLOBAL (SE EJECUTA UNA VEZ SI EXISTEN ARCHIVOS)
+# ==========================================================
+
+if datos_file and lp_file:
+
+    df_base = pd.read_excel(
+        datos_file,
+        sheet_name="NOMINA CUADRATURA (REM7) SIN CO"
+    )
+
+    lp_base = pd.read_excel(
+        lp_file,
+        sheet_name="Nomina Médico"
+    )
+
+    df_base[['Es_control', 'Es_CN']] = df_base.apply(
+        calcular_controlycn,
+        axis=1
+    )
+
+    actividad = df_base['Actividad'].astype(str).str.strip().str.upper()
 
     total_controles = (actividad == 'CONTROL').sum()
     total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-    df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
+    total_escontrol = int(df_base['Es_control'].sum())
+    total_cn_error = int(df_base['Es_CN'].sum())
 
-    total_escontrol = int(df['Es_control'].sum())
+    df_base['rut_puente'] = df_base['Rut'].apply(limpiar_rut_definitivo)
+    lp_base['rut_puente'] = lp_base['Rut'].apply(limpiar_rut_definitivo)
 
-    df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
-    lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
+    df_base['esp_puente'] = df_base['Especialidad'].str.strip().str.upper()
+    lp_base['esp_puente'] = lp_base['Especialidad Destino'].str.strip().str.upper()
 
-    df['esp_puente'] = df['Especialidad'].str.strip().str.upper()
-    lp['esp_puente'] = lp['Especialidad Destino'].str.strip().str.upper()
-
-    df = pd.merge(
-        df,
-        lp[['rut_puente','esp_puente','Num Interconsulta']],
+    df_base = pd.merge(
+        df_base,
+        lp_base[['rut_puente','esp_puente','Num Interconsulta']],
         on=['rut_puente','esp_puente'],
         how='left'
     )
 
-    df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
+    df_base['Num Interconsulta'] = df_base['Num Interconsulta'].fillna(0)
 
-    df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
+    df_base['Interconsulta_Valida'] = df_base.apply(
+        marcar_interconsulta_valida,
+        axis=1
+    )
 
-    total_inter = int(df['Interconsulta_Valida'].sum())
+    total_inter = int(df_base['Interconsulta_Valida'].sum())
 
     resultado = total_escontrol - total_inter
 
-    porc_1 = (resultado / total_controles * 100) if total_controles > 0 else 0
-    porc_2 = (resultado / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0
-
-    contexto = {
-        "total_escontrol": total_escontrol,
-        "total_inter": total_inter,
-        "resultado": resultado,
-        "porc_controles": round(porc_1, 2),
-        "porc_cn": round(porc_2, 2),
-    }
-
-    doc.render(contexto)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-        doc.save(tmp.name)
-
-        with open(tmp.name, "rb") as f:
-            st.download_button(
-                "📥 Descargar Preliminar 1",
-                f,
-                file_name="Preliminar_1.docx"
-            )
-
-    st.success("Preliminar 1 generado")
-
 
 # =========================
-# PRELIMINAR 2 (MISMO EXCEL, LOGICA DISTINTA)
-# =========================
-
-def generar_preliminar_2(datos_file, lp_file, word_file):
-
-    df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
-    lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
-    doc = DocxTemplate(word_file)
-
-    actividad = df['Actividad'].astype(str).str.strip().str.upper()
-
-    total_controles = (actividad == 'CONTROL').sum()
-    total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
-
-    df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
-
-    # 🔴 CAMBIO CLAVE PRELIMINAR 2
-    total_cn_error = int(df['Es_CN'].sum())
-
-    porc_vs_controles = (
-        (total_cn_error / total_controles) * 100
-        if total_controles > 0 else 0
-    )
-
-    porc_vs_cn = (
-        (total_cn_error / total_consultas_nuevas) * 100
-        if total_consultas_nuevas > 0 else 0
-    )
-
-    contexto = {
-        "total_cn_error": total_cn_error,
-        "porc_controles": round(porc_vs_controles, 2),
-        "porc_cn": round(porc_vs_cn, 2),
-    }
-
-    doc.render(contexto)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-        doc.save(tmp.name)
-
-        with open(tmp.name, "rb") as f:
-            st.download_button(
-                "📥 Descargar Preliminar 2",
-                f,
-                file_name="Preliminar_2.docx"
-            )
-
-    st.success("Preliminar 2 generado")
-
-
-# =========================
-# INTERFAZ (MISMO INPUT PARA AMBOS)
+# INTERFAZ
 # =========================
 
 st.header("📑 Informes Preliminares")
 
 col1, col2 = st.columns(2)
 
+
+# -------------------------
+# PRELIMINAR 1
+# -------------------------
 with col1:
 
     st.subheader("Preliminar 1")
 
-    datos1 = st.file_uploader("Datos", type=["xlsx"], key="d1")
-    lp1 = st.file_uploader("Lista Espera", type=["xlsx"], key="lp1")
-    word1 = st.file_uploader("Plantilla Preliminar 1", type=["docx"], key="w1")
+    word1 = st.file_uploader(
+        "Plantilla Preliminar 1",
+        type=["docx"],
+        key="w1"
+    )
 
-    if st.button("Generar Preliminar 1", key="b1"):
-        generar_preliminar_1(datos1, lp1, word1)
+    if st.button("Generar Preliminar 1"):
+
+        if datos_file and lp_file and word1:
+
+            doc = DocxTemplate(word1)
+
+            porc_1 = (resultado / total_controles * 100) if total_controles > 0 else 0
+            porc_2 = (resultado / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0
+
+            contexto = {
+                "total_escontrol": total_escontrol,
+                "total_inter": total_inter,
+                "resultado": resultado,
+                "porc_controles": round(porc_1, 2),
+                "porc_cn": round(porc_2, 2),
+            }
+
+            doc.render(contexto)
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+                doc.save(tmp.name)
+
+                with open(tmp.name, "rb") as f:
+                    st.download_button(
+                        "📥 Descargar Preliminar 1",
+                        f,
+                        file_name="Preliminar_1.docx"
+                    )
 
 
+# -------------------------
+# PRELIMINAR 2
+# -------------------------
 with col2:
 
     st.subheader("Preliminar 2")
 
-    datos2 = st.file_uploader("Datos", type=["xlsx"], key="d2")
-    lp2 = st.file_uploader("Lista Espera", type=["xlsx"], key="lp2")
-    word2 = st.file_uploader("Plantilla Preliminar 2", type=["docx"], key="w2")
+    word2 = st.file_uploader(
+        "Plantilla Preliminar 2",
+        type=["docx"],
+        key="w2"
+    )
 
-    if st.button("Generar Preliminar 2", key="b2"):
-        generar_preliminar_2(datos2, lp2, word2)
+    if st.button("Generar Preliminar 2"):
+
+        if datos_file and lp_file and word2:
+
+            doc = DocxTemplate(word2)
+
+            porc_vs_controles = (
+                (total_cn_error / total_controles) * 100
+                if total_controles > 0 else 0
+            )
+
+            porc_vs_cn = (
+                (total_cn_error / total_consultas_nuevas) * 100
+                if total_consultas_nuevas > 0 else 0
+            )
+
+            contexto = {
+                "total_cn_error": total_cn_error,
+                "porc_controles": round(porc_vs_controles, 2),
+                "porc_cn": round(porc_vs_cn, 2),
+            }
+
+            doc.render(contexto)
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+                doc.save(tmp.name)
+
+                with open(tmp.name, "rb") as f:
+                    st.download_button(
+                        "📥 Descargar Preliminar 2",
+                        f,
+                        file_name="Preliminar_2.docx"
+                    )
+
+else:
+    st.info("📌 Sube datos y lista de espera para habilitar los informes")
