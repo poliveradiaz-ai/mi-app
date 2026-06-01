@@ -163,12 +163,12 @@ if st.button("🚀 Generar Reporte"):
             # NORMALIZAR ESPECIALIDADES (CORRECCIÓN PEDIDA)
             # =========================
             df['Especialidad'] = (
-               df['Especialidad']
-               .astype(str)
-               .str.strip()
-               .replace({
-               'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
-               })
+                df['Especialidad']
+                .astype(str)
+                .str.strip()
+                .replace({
+                    'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
+                })
             )
             # =========================
             # TABLAS (ORIGINAL)
