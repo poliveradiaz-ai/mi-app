@@ -55,86 +55,33 @@ st.header("📂 Carga de datos base")
 datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 
-
-# ==========================================================
-# PREPARACIÓN GLOBAL (SE EJECUTA UNA VEZ SI EXISTEN ARCHIVOS)
-# ==========================================================
-
-if datos_file and lp_file:
-
-    df_base = pd.read_excel(
-        datos_file,
-        sheet_name="NOMINA CUADRATURA (REM7) SIN CO"
-    )
-
-    lp_base = pd.read_excel(
-        lp_file,
-        sheet_name="Nomina Médico"
-    )
-
-    df_base[['Es_control', 'Es_CN']] = df_base.apply(
-        calcular_controlycn,
-        axis=1
-    )
-
-    actividad = df_base['Actividad'].astype(str).str.strip().str.upper()
-
-    total_controles = (actividad == 'CONTROL').sum()
-    total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
-
-    total_escontrol = int(df_base['Es_control'].sum())
-    total_cn_error = int(df_base['Es_CN'].sum())
-
-    df_base['rut_puente'] = df_base['Rut'].apply(limpiar_rut_definitivo)
-    lp_base['rut_puente'] = lp_base['Rut'].apply(limpiar_rut_definitivo)
-
-    df_base['esp_puente'] = df_base['Especialidad'].str.strip().str.upper()
-    lp_base['esp_puente'] = lp_base['Especialidad Destino'].str.strip().str.upper()
-
-    df_base = pd.merge(
-        df_base,
-        lp_base[['rut_puente','esp_puente','Num Interconsulta']],
-        on=['rut_puente','esp_puente'],
-        how='left'
-    )
-
-    df_base['Num Interconsulta'] = df_base['Num Interconsulta'].fillna(0)
-
-    df_base['Interconsulta_Valida'] = df_base.apply(
-        marcar_interconsulta_valida,
-        axis=1
-    )
-
-    total_inter = int(df_base['Interconsulta_Valida'].sum())
-
-    resultado = total_escontrol - total_inter
-
-
 # =========================
-# INTERFAZ
+# VALIDACIÓN GLOBAL
 # =========================
 
-st.header("📑 Informes Preliminares")
+if not (datos_file and lp_file):
+    st.info("📌 Sube datos y lista de espera para habilitar los informes")
 
-col1, col2 = st.columns(2)
+else:
 
+    st.header("📑 Informes Preliminares")
 
-# -------------------------
-# PRELIMINAR 1
-# -------------------------
-with col1:
+    col1, col2 = st.columns(2)
 
-    st.subheader("Preliminar 1")
+    # -------------------------
+    # PRELIMINAR 1
+    # -------------------------
+    with col1:
 
-    word1 = st.file_uploader(
-        "Plantilla Preliminar 1",
-        type=["docx"],
-        key="w1"
-    )
+        st.subheader("Preliminar 1")
 
-    if st.button("Generar Preliminar 1"):
+        word1 = st.file_uploader(
+            "Plantilla Preliminar 1",
+            type=["docx"],
+            key="w1"
+        )
 
-        if datos_file and lp_file and word1:
+        if st.button("Generar Preliminar 1"):
 
             doc = DocxTemplate(word1)
 
@@ -161,23 +108,20 @@ with col1:
                         file_name="Preliminar_1.docx"
                     )
 
+    # -------------------------
+    # PRELIMINAR 2
+    # -------------------------
+    with col2:
 
-# -------------------------
-# PRELIMINAR 2
-# -------------------------
-with col2:
+        st.subheader("Preliminar 2")
 
-    st.subheader("Preliminar 2")
+        word2 = st.file_uploader(
+            "Plantilla Preliminar 2",
+            type=["docx"],
+            key="w2"
+        )
 
-    word2 = st.file_uploader(
-        "Plantilla Preliminar 2",
-        type=["docx"],
-        key="w2"
-    )
-
-    if st.button("Generar Preliminar 2"):
-
-        if datos_file and lp_file and word2:
+        if st.button("Generar Preliminar 2"):
 
             doc = DocxTemplate(word2)
 
@@ -208,6 +152,3 @@ with col2:
                         f,
                         file_name="Preliminar_2.docx"
                     )
-
-else:
-    st.info("📌 Sube datos y lista de espera para habilitar los informes")
