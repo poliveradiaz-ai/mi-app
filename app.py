@@ -10,7 +10,7 @@ st.title("📊 Generador de Reportes Médicos")
 st.write("Sube los archivos base y opcionalmente las plantillas de informes")
 
 # =========================
-# ARCHIVOS BASE (OBLIGATORIOS)
+# ARCHIVOS BASE
 # =========================
 st.markdown("## 📂 Archivos base (obligatorios)")
 
@@ -27,34 +27,13 @@ st.markdown("## 🧾 Plantillas de informes (opcionales)")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown(
-        """
-        <div style='padding:15px; border-radius:12px; background:#f1f8ff; border-left:6px solid #3498db;'>
-        <h4>📄 Informe Preliminar 1</h4>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    word_file_1 = st.file_uploader(
-        "Subir plantilla 1 (.docx)",
-        type=["docx"],
-        key="w1"
-    )
+    st.markdown("### 📄 Informe Preliminar 1")
+    word_file_1 = st.file_uploader("Subir plantilla 1", type=["docx"], key="w1")
 
 with col2:
-    st.markdown(
-        """
-        <div style='padding:15px; border-radius:12px; background:#f1fff3; border-left:6px solid #2ecc71;'>
-        <h4>📄 Informe Preliminar 2</h4>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    word_file_2 = st.file_uploader(
-        "Subir plantilla 2 (.docx)",
-        type=["docx"],
-        key="w2"
-    )
+    st.markdown("### 📄 Informe Preliminar 2")
+    word_file_2 = st.file_uploader("Subir plantilla 2", type=["docx"], key="w2")
+
 
 # =========================
 # BOTÓN
@@ -65,31 +44,34 @@ if st.button("🚀 Generar Reportes"):
 
         try:
             # =========================
-            # LECTURA DE ARCHIVOS
+            # LECTURA
             # =========================
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
-            # =========================
-            # PLANTILLAS (opcionales)
-            # =========================
             doc1 = DocxTemplate(word_file_1) if word_file_1 else None
             doc2 = DocxTemplate(word_file_2) if word_file_2 else None
 
             # =========================
-            # PROCESAMIENTO BASE
+            # ACTIVIDAD
             # =========================
             actividad = df['Actividad'].astype(str).str.strip().str.upper()
 
             total_controles = (actividad == 'CONTROL').sum()
             total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
+            # =========================
+            # FUNCIONARIO
+            # =========================
             df['Funcionario'] = (
                 df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Mat'].fillna('').astype(str).str.strip()
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
+            # =========================
+            # RUT MERGE
+            # =========================
             df['rut_puente'] = df['Rut'].astype(str).str.replace(".", "").str.split("-").str[0]
             lp['rut_puente'] = lp['Rut'].astype(str).str.replace(".", "").str.split("-").str[0]
 
@@ -106,20 +88,61 @@ if st.button("🚀 Generar Reportes"):
             df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
             # =========================
-            # CÁLCULOS
+            # ES_CONTROL / ES_CN
             # =========================
-            total_escontrol = (actividad == 'CONTROL').sum()
-            total_escn = (actividad == 'CONSULTA NUEVA').sum()
-            total_inter = (df['Num Interconsulta'] > 0).sum()
+            df['Es_control'] = ((actividad == 'CONSULTA NUEVA') & (df['Ic Asoc Hora'].astype(str).str.strip() == '-')).astype(int)
+            df['Es_CN'] = ((actividad == 'CONTROL') & (df['Ic Asoc Hora'].astype(str).str.strip() != '-')).astype(int)
+
+            total_escontrol = df['Es_control'].sum()
+            total_escn = df['Es_CN'].sum()
+
+            # =========================
+            # INTERCONSULTA VÁLIDA
+            # =========================
+            df['Interconsulta_Valida'] = (
+                (actividad == 'CONSULTA NUEVA') &
+                (df['Ic Asoc Hora'].astype(str).str.strip() == '-') &
+                (df['Num Interconsulta'] != 0)
+            ).astype(int)
+
+            total_inter = df['Interconsulta_Valida'].sum()
 
             resultado = total_escontrol - total_inter
 
             # =========================
-            # CONTEXTO WORD
+            # ERROR (CLAVE CORRECTA)
+            # =========================
+            df['Error_escontrol_menos_Inter'] = (
+                (df['Es_control'] - df['Interconsulta_Valida']) > 0
+            ).astype(int)
+
+            # 🔥 FILTRO CORRECTO (ESTO TE ESTABA FALLANDO)
+            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
+
+            # =========================
+            # TABLAS CORRECTAS
+            # =========================
+            tabla = (
+                df_controles
+                .groupby("Especialidad")
+                .size()
+                .reset_index(name="cantidad")
+                .sort_values(by="cantidad", ascending=False)
+            )
+
+            tabla_funcionarios = (
+                df_controles
+                .groupby(['Especialidad', 'Funcionario'])
+                .size()
+                .reset_index(name='total')
+                .sort_values(by='total', ascending=False)
+            )
+
+            # =========================
+            # CONTEXTO WORD (CORRECTO)
             # =========================
             contexto = {
-    
-                'filas': df.to_dict(orient='records'),
+                'filas': df.to_dict('records'),
 
                 'total_es_control': int(total_escontrol),
                 'total_es_cn': int(total_escn),
@@ -128,15 +151,15 @@ if st.button("🚀 Generar Reportes"):
                 'total_consultas_nuevas': int(total_consultas_nuevas),
 
                 'total_inter': int(total_inter),
-                'resultado': int(resultado),
+                'resultado_es_control_menos_interconsulta': int(resultado),
 
-                'especialidades': df.groupby("Especialidad").size().reset_index(name="cantidad").to_dict(orient="records"),
- 
-                'tabla_funcionarios': df.groupby(['Especialidad', 'Funcionario']).size().reset_index(name='total').to_dict(orient="records"),
+                'especialidades': tabla.to_dict('records'),
+                'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
+                'total_general_control': int(tabla['cantidad'].sum()),
             }
 
             # =========================
-            # RENDER (solo si existen plantillas)
+            # RENDER WORD
             # =========================
             if doc1:
                 doc1.render(contexto)
@@ -147,41 +170,35 @@ if st.button("🚀 Generar Reportes"):
             # =========================
             # GUARDADO
             # =========================
-            st.success("✅ Proceso completado correctamente")
+            st.success("✅ Reportes generados correctamente")
 
             colA, colB = st.columns(2)
 
-            # -------------------------
-            # INFORME 1
-            # -------------------------
             if doc1:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
                     doc1.save(tmp1.name)
 
                 with open(tmp1.name, "rb") as f1:
                     colA.download_button(
-                        "📥 Descargar Informe 1",
+                        "📥 Informe 1",
                         f1,
-                        file_name="Informe_Preliminar_1.docx"
+                        file_name="Informe_1.docx"
                     )
             else:
-                colA.warning("⚠️ No subiste plantilla 1")
+                colA.warning("No subiste plantilla 1")
 
-            # -------------------------
-            # INFORME 2
-            # -------------------------
             if doc2:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
                     doc2.save(tmp2.name)
 
                 with open(tmp2.name, "rb") as f2:
                     colB.download_button(
-                        "📥 Descargar Informe 2",
+                        "📥 Informe 2",
                         f2,
-                        file_name="Informe_Preliminar_2.docx"
+                        file_name="Informe_2.docx"
                     )
             else:
-                colB.warning("⚠️ No subiste plantilla 2")
+                colB.warning("No subiste plantilla 2")
 
             # =========================
             # KPIs
@@ -199,4 +216,4 @@ if st.button("🚀 Generar Reportes"):
             st.error(f"Error: {e}")
 
     else:
-        st.warning("⚠️ Debes subir al menos los archivos base (datos y lista de espera)")
+        st.warning("⚠️ Debes subir datos y lista de espera")
