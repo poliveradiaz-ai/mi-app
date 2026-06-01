@@ -47,7 +47,7 @@ def marcar_interconsulta_valida(fila):
 
 
 # =========================
-# CARGA DE ARCHIVOS (UNA VEZ)
+# CARGA DE ARCHIVOS
 # =========================
 
 st.header("📂 Carga de datos base")
@@ -75,7 +75,6 @@ if datos_file and lp_file:
         sheet_name="Nomina Médico"
     )
 
-    # Flags
     df_base[['Es_control', 'Es_CN']] = df_base.apply(
         calcular_controlycn,
         axis=1
@@ -89,7 +88,7 @@ if datos_file and lp_file:
     total_escontrol = int(df_base['Es_control'].sum())
     total_cn_error = int(df_base['Es_CN'].sum())
 
-    # Merge interconsultas
+    # merge interconsultas
     df_base['rut_puente'] = df_base['Rut'].apply(limpiar_rut_definitivo)
     lp_base['rut_puente'] = lp_base['Rut'].apply(limpiar_rut_definitivo)
 
@@ -144,15 +143,45 @@ with col1:
 
             doc = DocxTemplate(word1)
 
-            porc_1 = (resultado / total_controles * 100) if total_controles > 0 else 0
-            porc_2 = (resultado / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0
-
             contexto = {
-                "total_escontrol": total_escontrol,
-                "total_inter": total_inter,
-                "resultado": resultado,
-                "porc_controles": round(porc_1, 2),
-                "porc_cn": round(porc_2, 2),
+                'filas': df_base.to_dict(orient='records'),
+
+                'total_es_control': total_escontrol,
+                'total_es_cn': total_cn_error,
+
+                'total_controles': int(total_controles),
+                'total_consultas_nuevas': int(total_consultas_nuevas),
+
+                'total_inter': total_inter,
+
+                'resultado_es_control_menos_interconsulta': resultado,
+
+                'porc_escontrol_vs_controles': round(
+                    (resultado / total_controles * 100) if total_controles > 0 else 0, 2
+                ),
+
+                'porc_escontrol_vs_cn': round(
+                    (resultado / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0, 2
+                ),
+
+                'especialidades': df_base[df_base['Error_Final'] == 1]
+                    .groupby("Especialidad")
+                    .size()
+                    .reset_index(name="cantidad")
+                    .to_dict(orient='records'),
+
+                'total_general_control': int(
+                    df_base[df_base['Error_Final'] == 1]
+                    .groupby("Especialidad")
+                    .size()
+                    .sum()
+                ),
+
+                'tabla_funcionarios': df_base[df_base['Error_Final'] == 1]
+                    .groupby(['Especialidad', 'Funcionario'])
+                    .size()
+                    .reset_index(name='total')
+                    .to_dict(orient='records'),
             }
 
             doc.render(contexto)
@@ -168,7 +197,7 @@ with col1:
                     )
 
         else:
-            st.warning("Debes subir los archivos primero")
+            st.warning("Sube los archivos primero")
 
 
 # =========================
@@ -191,20 +220,24 @@ with col2:
 
             doc = DocxTemplate(word2)
 
-            porc_vs_controles = (
-                (total_cn_error / total_controles) * 100
-                if total_controles > 0 else 0
-            )
-
-            porc_vs_cn = (
-                (total_cn_error / total_consultas_nuevas) * 100
-                if total_consultas_nuevas > 0 else 0
-            )
-
             contexto = {
-                "total_cn_error": total_cn_error,
-                "porc_controles": round(porc_vs_controles, 2),
-                "porc_cn": round(porc_vs_cn, 2),
+                'total_es_control': total_escontrol,
+                'total_es_cn': total_cn_error,
+
+                'total_controles': int(total_controles),
+                'total_consultas_nuevas': int(total_consultas_nuevas),
+
+                'total_inter': total_inter,
+
+                'resultado_es_control_menos_interconsulta': total_cn_error,
+
+                'porc_escontrol_vs_controles': round(
+                    (total_cn_error / total_controles * 100) if total_controles > 0 else 0, 2
+                ),
+
+                'porc_escontrol_vs_cn': round(
+                    (total_cn_error / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0, 2
+                ),
             }
 
             doc.render(contexto)
@@ -220,7 +253,7 @@ with col2:
                     )
 
         else:
-            st.warning("Debes subir los archivos primero")
+            st.warning("Sube los archivos primero")
 
 
 # =========================
