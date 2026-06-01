@@ -191,7 +191,7 @@ if st.button("🚀 Generar Reporte"):
             )
                 df['Especialidad'] = df['Especialidad'].astype(str).str.strip().replace({
                 'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
-                 })
+            })
             # =========================
             # CONTEXTO (ORIGINAL)
             # =========================
