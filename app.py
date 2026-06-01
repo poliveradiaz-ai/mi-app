@@ -123,14 +123,14 @@ if st.button("🚀 Generar Reporte"):
             # =========================
             # ERROR FINAL
             # =========================
-            df['Error_Final_Escontrol_menos_Inter'] = (df['Es_control'] - df['Interconsulta_Valida'])
-            df['Error_Final_Escontrol_menos_Inter'] = (df['Error_Final_Escontrol_menos_Inter'] > 0).astype(int)
+            df['Error_Final'] = (df['Es_control'] - df['Interconsulta_Valida'])
+            df['Error_Final'] = (df['Error_Final'] > 0).astype(int)
 
             # =========================
             # TABLA FUNCIONARIOS (SEGÚN ERROR FINAL)
             # =========================
             tabla_funcionarios = (
-                df[df['Error_Final_Escontrol_menos_Inter'] == 1]
+                df[df['Error_Final'] == 1]
                 .groupby(['Especialidad', 'Funcionario'])
                 .size()
                 .reset_index(name='total')
