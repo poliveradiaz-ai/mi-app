@@ -158,7 +158,6 @@ if st.button("🚀 Generar Reporte"):
             df['Error_escontrol_menos_Inter'] = (df['Es_control'] - df['Interconsulta_Valida'])
             df['Error_escontrol_menos_Inter'] = (df['Error_escontrol_menos_Inter'] > 0).astype(int)
 
-            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
             # =========================
             # NORMALIZAR ESPECIALIDADES (CORRECCIÓN PEDIDA)
             # =========================
@@ -170,6 +169,7 @@ if st.button("🚀 Generar Reporte"):
                     'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
                 })
             )
+            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
             # =========================
             # TABLAS (ORIGINAL)
             # =========================
