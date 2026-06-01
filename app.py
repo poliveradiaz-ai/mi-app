@@ -7,12 +7,12 @@ st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
 
-st.write("Sube los archivos base y las plantillas para generar los informes")
+st.write("Sube los archivos base y opcionalmente las plantillas de informes")
 
 # =========================
-# ARCHIVOS BASE (COMUNES)
+# ARCHIVOS BASE (OBLIGATORIOS)
 # =========================
-st.markdown("## 📂 Archivos base (comunes para ambos informes)")
+st.markdown("## 📂 Archivos base (obligatorios)")
 
 datos_file = st.file_uploader("📄 Subir datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
@@ -20,9 +20,9 @@ lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
 st.divider()
 
 # =========================
-# TARJETAS DE PLANTILLAS
+# PLANTILLAS (OPCIONALES)
 # =========================
-st.markdown("## 🧾 Plantillas de informes")
+st.markdown("## 🧾 Plantillas de informes (opcionales)")
 
 col1, col2 = st.columns(2)
 
@@ -35,7 +35,11 @@ with col1:
         """,
         unsafe_allow_html=True
     )
-    word_file_1 = st.file_uploader("Subir plantilla 1 (.docx)", type=["docx"], key="w1")
+    word_file_1 = st.file_uploader(
+        "Subir plantilla 1 (.docx)",
+        type=["docx"],
+        key="w1"
+    )
 
 with col2:
     st.markdown(
@@ -46,25 +50,31 @@ with col2:
         """,
         unsafe_allow_html=True
     )
-    word_file_2 = st.file_uploader("Subir plantilla 2 (.docx)", type=["docx"], key="w2")
-
+    word_file_2 = st.file_uploader(
+        "Subir plantilla 2 (.docx)",
+        type=["docx"],
+        key="w2"
+    )
 
 # =========================
 # BOTÓN
 # =========================
 if st.button("🚀 Generar Reportes"):
 
-    if datos_file and lp_file and word_file_1 and word_file_2:
+    if datos_file and lp_file:
 
         try:
             # =========================
-            # LEER DATOS
+            # LECTURA DE ARCHIVOS
             # =========================
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
-            doc1 = DocxTemplate(word_file_1)
-            doc2 = DocxTemplate(word_file_2)
+            # =========================
+            # PLANTILLAS (opcionales)
+            # =========================
+            doc1 = DocxTemplate(word_file_1) if word_file_1 else None
+            doc2 = DocxTemplate(word_file_2) if word_file_2 else None
 
             # =========================
             # PROCESAMIENTO BASE
@@ -88,8 +98,8 @@ if st.button("🚀 Generar Reportes"):
 
             df = pd.merge(
                 df,
-                lp[['rut_puente','esp_puente','Num Interconsulta']],
-                on=['rut_puente','esp_puente'],
+                lp[['rut_puente', 'esp_puente', 'Num Interconsulta']],
+                on=['rut_puente', 'esp_puente'],
                 how='left'
             )
 
@@ -117,40 +127,58 @@ if st.button("🚀 Generar Reportes"):
                 "filas": df.to_dict("records")
             }
 
-            doc1.render(contexto)
-            doc2.render(contexto)
+            # =========================
+            # RENDER (solo si existen plantillas)
+            # =========================
+            if doc1:
+                doc1.render(contexto)
+
+            if doc2:
+                doc2.render(contexto)
 
             # =========================
-            # GUARDAR
+            # GUARDADO
             # =========================
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
-                doc1.save(tmp1.name)
-
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
-                doc2.save(tmp2.name)
-
-            st.success("✅ Reportes generados correctamente")
+            st.success("✅ Proceso completado correctamente")
 
             colA, colB = st.columns(2)
 
-            with open(tmp1.name, "rb") as f1:
-                colA.download_button(
-                    "📥 Descargar Informe 1",
-                    f1,
-                    file_name="Informe_Preliminar_1.docx"
-                )
+            # -------------------------
+            # INFORME 1
+            # -------------------------
+            if doc1:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
+                    doc1.save(tmp1.name)
 
-            with open(tmp2.name, "rb") as f2:
-                colB.download_button(
-                    "📥 Descargar Informe 2",
-                    f2,
-                    file_name="Informe_Preliminar_2.docx"
-                )
+                with open(tmp1.name, "rb") as f1:
+                    colA.download_button(
+                        "📥 Descargar Informe 1",
+                        f1,
+                        file_name="Informe_Preliminar_1.docx"
+                    )
+            else:
+                colA.warning("⚠️ No subiste plantilla 1")
+
+            # -------------------------
+            # INFORME 2
+            # -------------------------
+            if doc2:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
+                    doc2.save(tmp2.name)
+
+                with open(tmp2.name, "rb") as f2:
+                    colB.download_button(
+                        "📥 Descargar Informe 2",
+                        f2,
+                        file_name="Informe_Preliminar_2.docx"
+                    )
+            else:
+                colB.warning("⚠️ No subiste plantilla 2")
 
             # =========================
-            # DASHBOARD FINAL
+            # KPIs
             # =========================
-            st.markdown("## 📊 Resumen General")
+            st.markdown("## 📊 Resumen")
 
             c1, c2, c3, c4 = st.columns(4)
 
@@ -163,4 +191,4 @@ if st.button("🚀 Generar Reportes"):
             st.error(f"Error: {e}")
 
     else:
-        st.warning("⚠️ Debes subir todos los archivos antes de continuar")
+        st.warning("⚠️ Debes subir al menos los archivos base (datos y lista de espera)")
