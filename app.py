@@ -189,9 +189,7 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='total')
                 .sort_values(by='total', ascending=False)
             )
-                df['Especialidad'] = df['Especialidad'].astype(str).str.strip().replace({
-                'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA'
-            })
+               
             # =========================
             # CONTEXTO (ORIGINAL)
             # =========================
