@@ -3,109 +3,88 @@ import pandas as pd
 from docxtpl import DocxTemplate
 import tempfile
 
-st.set_page_config(page_title="Reporte Cuadratura", layout="centered")
+st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
 
-st.write("Sube los archivos para generar el reporte automáticamente")
+st.write("Sube los archivos base y las plantillas para generar los informes")
 
-# 📂 Subida de archivos
-datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
-lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
-word_file = st.file_uploader("Sube plantilla.docx", type=["docx"])
-preliminar2_word_file = st.file_uploader(
-    "Sube plantilla Informe Preliminar 2 (.docx)",
-    type=["docx"]
-)
+# =========================
+# ARCHIVOS BASE (COMUNES)
+# =========================
+st.markdown("## 📂 Archivos base (comunes para ambos informes)")
 
-# ---------------- FUNCIONES ----------------
+datos_file = st.file_uploader("📄 Subir datos.xlsx", type=["xlsx"])
+lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
 
-def calcular_controlycn(fila):
-    actividad = str(fila.get('Actividad','')).strip()
-    Ic = str(fila.get('Ic Asoc Hora','')).strip()
+st.divider()
 
-    rEs_control = 1 if (actividad == 'CONSULTA NUEVA' and Ic == '-') else 0
-    rEs_CN = 1 if (actividad == 'CONTROL' and Ic != '-') else 0
+# =========================
+# TARJETAS DE PLANTILLAS
+# =========================
+st.markdown("## 🧾 Plantillas de informes")
 
-    return pd.Series([rEs_control, rEs_CN])
+col1, col2 = st.columns(2)
 
+with col1:
+    st.markdown(
+        """
+        <div style='padding:15px; border-radius:12px; background:#f1f8ff; border-left:6px solid #3498db;'>
+        <h4>📄 Informe Preliminar 1</h4>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    word_file_1 = st.file_uploader("Subir plantilla 1 (.docx)", type=["docx"], key="w1")
 
-def limpiar_rut_definitivo(rut):
-    rut = str(rut).strip()
-    if "-" in rut:
-        rut = rut.split("-")[0]
-    return rut.replace(".", "")
-
-
-def marcar_interconsulta_valida(fila):
-    actividad = str(fila.get('Actividad', '')).strip().upper()
-    ic_asoc = str(fila.get('Ic Asoc Hora', '')).strip()
-    num_ic = fila.get('Num Interconsulta', 0)
-
-    try:
-        num_ic = float(num_ic)
-    except:
-        num_ic = 0
-
-    if actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0:
-        return 1
-    return 0
+with col2:
+    st.markdown(
+        """
+        <div style='padding:15px; border-radius:12px; background:#f1fff3; border-left:6px solid #2ecc71;'>
+        <h4>📄 Informe Preliminar 2</h4>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    word_file_2 = st.file_uploader("Subir plantilla 2 (.docx)", type=["docx"], key="w2")
 
 
-# ---------------- EJECUCIÓN ----------------
+# =========================
+# BOTÓN
+# =========================
+if st.button("🚀 Generar Reportes"):
 
-if st.button("🚀 Generar Reporte"):
-
-    if datos_file and lp_file and word_file and preliminar2_word_file:
+    if datos_file and lp_file and word_file_1 and word_file_2:
 
         try:
             # =========================
-            # LEER ARCHIVOS
+            # LEER DATOS
             # =========================
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
-            doc = DocxTemplate(word_file)
-            doc_preliminar2 = DocxTemplate(preliminar2_word_file)
+            doc1 = DocxTemplate(word_file_1)
+            doc2 = DocxTemplate(word_file_2)
 
             # =========================
-            # TOTALES
+            # PROCESAMIENTO BASE
             # =========================
-            actividad = (
-                df['Actividad']
-                .astype(str)
-                .str.strip()
-                .str.upper()
-            )
+            actividad = df['Actividad'].astype(str).str.strip().str.upper()
 
             total_controles = (actividad == 'CONTROL').sum()
             total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-            # =========================
-            # FLAGS
-            # =========================
-            df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
-
-            total_escontrol = int(df['Es_control'].sum())
-            total_escn = int(df['Es_CN'].sum())
-
-            # =========================
-            # FUNCIONARIO
-            # =========================
             df['Funcionario'] = (
                 df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Mat'].fillna('').astype(str).str.strip()
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
-            # =========================
-            # RUT + MERGE
-            # =========================
-            df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
-            lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
+            df['rut_puente'] = df['Rut'].astype(str).str.replace(".", "").str.split("-").str[0]
+            lp['rut_puente'] = lp['Rut'].astype(str).str.replace(".", "").str.split("-").str[0]
 
-            df['esp_puente'] = df['Especialidad'].str.strip().str.upper()
-            lp['esp_puente'] = lp['Especialidad Destino'].str.strip().str.upper()
+            df['esp_puente'] = df['Especialidad'].astype(str).str.strip().str.upper()
+            lp['esp_puente'] = lp['Especialidad Destino'].astype(str).str.strip().str.upper()
 
             df = pd.merge(
                 df,
@@ -117,130 +96,71 @@ if st.button("🚀 Generar Reporte"):
             df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
             # =========================
-            # INTERCONSULTA VALIDA
+            # CÁLCULOS
             # =========================
-            df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
+            total_escontrol = (actividad == 'CONTROL').sum()
+            total_escn = (actividad == 'CONSULTA NUEVA').sum()
+            total_inter = (df['Num Interconsulta'] > 0).sum()
 
-            total_inter = int(df['Interconsulta_Valida'].sum())
-
-            resultado_es_control_menos_interconsulta = total_escontrol - total_inter
-
-            # =========================
-            # ERROR FINAL
-            # =========================
-            df['Error'] = (df['Es_control'] - df['Interconsulta_Valida'])
-            df['Error'] = (df['Error'] > 0).astype(int)
-
-            tabla_funcionarios = (
-                df[df['Error'] == 1]
-                .groupby(['Especialidad', 'Funcionario'])
-                .size()
-                .reset_index(name='total')
-                .sort_values(by='total', ascending=False)
-            )
-
-            # =========================
-            # ESPECIALIDADES
-            # =========================
-            reemplazos_especialidad = {
-                'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
-                'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA'
-            }
-
-            df['Especialidad'] = df['Especialidad'].astype(str).str.strip().replace(reemplazos_especialidad)
-
-            df_controles = df[df['Error'] == 1]
-
-            tabla = (
-                df_controles
-                .groupby("Especialidad")
-                .size()
-                .reset_index(name="cantidad")
-                .sort_values(by="cantidad", ascending=False)
-            )
-
-            # =========================
-            # PORCENTAJES
-            # =========================
-            porc_escontrol_vs_controles = (resultado_es_control_menos_interconsulta / total_controles) * 100 if total_controles else 0
-            porc_escontrol_vs_cn = (resultado_es_control_menos_interconsulta / total_consultas_nuevas) * 100 if total_consultas_nuevas else 0
+            resultado = total_escontrol - total_inter
 
             # =========================
             # CONTEXTO WORD
             # =========================
             contexto = {
-                'filas': df.to_dict(orient='records'),
-                'total_es_control': total_escontrol,
-                'total_es_cn': total_escn,
-                'total_controles': int(total_controles),
-                'total_consultas_nuevas': int(total_consultas_nuevas),
-                'total_inter': total_inter,
-                'resultado_es_control_menos_interconsulta': resultado_es_control_menos_interconsulta,
-                'especialidades': tabla.to_dict(orient='records'),
-                'total_general_control': int(tabla['cantidad'].sum()),
-                'porc_escontrol_vs_controles': round(porc_escontrol_vs_controles, 2),
-                'porc_escontrol_vs_cn': round(porc_escontrol_vs_cn, 2),
-                'tabla_funcionarios': tabla_funcionarios.to_dict(orient='records'),
+                "total_es_control": int(total_escontrol),
+                "total_es_cn": int(total_escn),
+                "total_controles": int(total_controles),
+                "total_consultas_nuevas": int(total_consultas_nuevas),
+                "total_inter": int(total_inter),
+                "resultado": int(resultado),
+                "filas": df.to_dict("records")
             }
 
-            # =========================
-            # RENDER WORDS
-            # =========================
-            doc.render(contexto)
-            doc_preliminar2.render(contexto)
+            doc1.render(contexto)
+            doc2.render(contexto)
 
             # =========================
-            # GUARDAR ARCHIVOS
+            # GUARDAR
             # =========================
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
-                doc.save(tmp1.name)
+                doc1.save(tmp1.name)
 
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
-                doc_preliminar2.save(tmp2.name)
+                doc2.save(tmp2.name)
 
-            st.success("✅ Reporte generado correctamente")
+            st.success("✅ Reportes generados correctamente")
+
+            colA, colB = st.columns(2)
 
             with open(tmp1.name, "rb") as f1:
-                st.download_button(
-                    "📥 Descargar Reporte Principal",
+                colA.download_button(
+                    "📥 Descargar Informe 1",
                     f1,
-                    file_name="Reporte_Principal.docx"
+                    file_name="Informe_Preliminar_1.docx"
                 )
 
             with open(tmp2.name, "rb") as f2:
-                st.download_button(
-                    "📥 Descargar Informe Preliminar 2",
+                colB.download_button(
+                    "📥 Descargar Informe 2",
                     f2,
                     file_name="Informe_Preliminar_2.docx"
                 )
 
             # =========================
-            # DASHBOARD VISUAL
+            # DASHBOARD FINAL
             # =========================
-            st.subheader("📊 Comparación de Informes")
+            st.markdown("## 📊 Resumen General")
 
-            col1, col2 = st.columns(2)
+            c1, c2, c3, c4 = st.columns(4)
 
-            with col1:
-                st.markdown("## 📄 Informe Preliminar 1")
-                st.metric("Control", total_escontrol)
-                st.metric("CN", total_escn)
-                st.metric("Interconsultas", total_inter)
-                st.metric("Resultado", resultado_es_control_menos_interconsulta)
-                st.dataframe(tabla, use_container_width=True)
-                st.dataframe(tabla_funcionarios, use_container_width=True)
-
-            with col2:
-                st.markdown("## 📄 Informe Preliminar 2")
-                st.metric("Control", total_escontrol)
-                st.metric("CN", total_escn)
-                st.metric("Interconsultas", total_inter)
-                st.metric("Resultado", resultado_es_control_menos_interconsulta)
-                st.dataframe(tabla, use_container_width=True)
-                st.dataframe(tabla_funcionarios, use_container_width=True)
+            c1.metric("Control", total_escontrol)
+            c2.metric("CN", total_escn)
+            c3.metric("Interconsultas", total_inter)
+            c4.metric("Resultado", resultado)
 
         except Exception as e:
             st.error(f"Error: {e}")
 
     else:
-        st.warning("Debes subir los 4 archivos")
+        st.warning("⚠️ Debes subir todos los archivos antes de continuar")
