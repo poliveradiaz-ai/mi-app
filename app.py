@@ -169,14 +169,14 @@ if st.button("🚀 Generar Reporte"):
             # PORCENTAJES (AL FINAL)
             # =========================
             porc_escontrol_vs_controles = (
-                (total_escontrol / total_controles) * 100
-                if total_controles > 0 else 0
-            )
+           (resultado_es_control_menos_interconsulta / total_controles) * 100
+           if total_controles > 0 else 0
+           )
 
-            porc_escontrol_vs_cn = (
-                (total_escontrol / total_consultas_nuevas) * 100
-                if total_consultas_nuevas > 0 else 0
-            )
+           porc_escontrol_vs_cn = (
+           (resultado_es_control_menos_interconsulta / total_consultas_nuevas) * 100
+           if total_consultas_nuevas > 0 else 0
+           )
 
             # =========================
             # CONTEXTO WORD
