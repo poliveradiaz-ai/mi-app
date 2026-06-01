@@ -7,11 +7,9 @@ st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
 
-st.write("Sube los archivos para generar los reportes automáticamente")
-
 
 # =========================
-# FUNCIONES
+# FUNCIONES BASE
 # =========================
 
 def calcular_controlycn(fila):
@@ -49,7 +47,7 @@ def marcar_interconsulta_valida(fila):
 
 
 # =========================
-# PRELIMINAR 1
+# PRELIMINAR 1 (WORD + LISTA ESPERA)
 # =========================
 
 def generar_preliminar_1(datos_file, lp_file, word_file):
@@ -91,22 +89,37 @@ def generar_preliminar_1(datos_file, lp_file, word_file):
     porc_1 = (resultado / total_controles * 100) if total_controles > 0 else 0
     porc_2 = (resultado / total_consultas_nuevas * 100) if total_consultas_nuevas > 0 else 0
 
-    st.success("Preliminar 1 listo")
+    contexto = {
+        "total_escontrol": total_escontrol,
+        "total_inter": total_inter,
+        "resultado": resultado,
+        "porc_controles": round(porc_1, 2),
+        "porc_cn": round(porc_2, 2),
+    }
 
-    st.metric("Total ES Control", total_escontrol)
-    st.metric("Interconsultas", total_inter)
-    st.metric("Resultado", resultado)
-    st.write("Porcentaje vs Controles:", round(porc_1, 2), "%")
-    st.write("Porcentaje vs CN:", round(porc_2, 2), "%")
+    doc.render(contexto)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+        doc.save(tmp.name)
+
+        with open(tmp.name, "rb") as f:
+            st.download_button(
+                "📥 Descargar Preliminar 1",
+                f,
+                file_name="Preliminar_1.docx"
+            )
+
+    st.success("Preliminar 1 generado")
 
 
 # =========================
-# PRELIMINAR 2
+# PRELIMINAR 2 (WORD + SIN LISTA ESPERA)
 # =========================
 
-def generar_preliminar_2(datos_file):
+def generar_preliminar_2(datos_file, word_file):
 
     df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
+    doc = DocxTemplate(word_file)
 
     actividad = df['Actividad'].astype(str).str.strip().str.upper()
 
@@ -127,15 +140,29 @@ def generar_preliminar_2(datos_file):
         if total_consultas_nuevas > 0 else 0
     )
 
-    st.success("Preliminar 2 listo")
+    contexto = {
+        "total_cn_error": total_cn_error,
+        "porc_controles": round(porc_vs_controles, 2),
+        "porc_cn": round(porc_vs_cn, 2),
+    }
 
-    st.metric("Errores CONTROL + IC", total_cn_error)
-    st.write("Porcentaje vs Controles:", round(porc_vs_controles, 2), "%")
-    st.write("Porcentaje vs CN:", round(porc_vs_cn, 2), "%")
+    doc.render(contexto)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+        doc.save(tmp.name)
+
+        with open(tmp.name, "rb") as f:
+            st.download_button(
+                "📥 Descargar Preliminar 2",
+                f,
+                file_name="Preliminar_2.docx"
+            )
+
+    st.success("Preliminar 2 generado")
 
 
 # =========================
-# INTERFAZ (2 COLUMNAS)
+# INTERFAZ
 # =========================
 
 col1, col2 = st.columns(2)
@@ -149,7 +176,7 @@ with col1:
 
     datos1 = st.file_uploader("Datos", type=["xlsx"], key="d1")
     lp1 = st.file_uploader("Lista Espera", type=["xlsx"], key="lp1")
-    word1 = st.file_uploader("Plantilla", type=["docx"], key="w1")
+    word1 = st.file_uploader("Plantilla Word 1", type=["docx"], key="w1")
 
     if st.button("Generar Preliminar 1", key="b1"):
         generar_preliminar_1(datos1, lp1, word1)
@@ -163,6 +190,7 @@ with col2:
     st.subheader("📄 Preliminar 2")
 
     datos2 = st.file_uploader("Datos", type=["xlsx"], key="d2")
+    word2 = st.file_uploader("Plantilla Word 2", type=["docx"], key="w2")
 
     if st.button("Generar Preliminar 2", key="b2"):
-        generar_preliminar_2(datos2)
+        generar_preliminar_2(datos2, word2)
