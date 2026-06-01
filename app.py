@@ -220,15 +220,15 @@ if st.button("🚀 Generar Reporte"):
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
                doc_preliminar2.save(tmp2.name)
 
-                st.success("✅ Reporte generado correctamente")
+            st.success("✅ Reporte generado correctamente")
 
-                with open(tmp1.name, "rb") as f1:
+            with open(tmp1.name, "rb") as f1:
                    st.download_button(
                       "📥 Descargar Reporte Principal",
                       f1,
                       file_name="Reporte_Principal.docx"
                    )
-               with open(tmp2.name, "rb") as f2:
+            with open(tmp2.name, "rb") as f2:
                   st.download_button(
                      "📥 Descargar Informe Preliminar 2",
                      f2,
