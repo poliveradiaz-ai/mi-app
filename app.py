@@ -7,10 +7,12 @@ st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
 
+st.write("Sube los archivos base y opcionalmente las plantillas")
+
 # =========================
-# ARCHIVOS BASE
+# ARCHIVOS BASE (OBLIGATORIOS)
 # =========================
-st.markdown("## 📂 Archivos base (obligatorios)")
+st.markdown("## 📂 Archivos base")
 
 datos_file = st.file_uploader("📄 Subir datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
@@ -18,17 +20,37 @@ lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
 st.divider()
 
 # =========================
-# PLANTILLAS OPCIONALES
+# TARJETAS VISUALES PLANTILLAS
 # =========================
-st.markdown("## 🧾 Plantillas")
-
 col1, col2 = st.columns(2)
 
 with col1:
-    word_file_1 = st.file_uploader("📄 Plantilla Informe 1", type=["docx"], key="w1")
+    st.markdown("""
+    <div style="padding:15px;border-radius:12px;background:#e8f4ff;border-left:6px solid #1f77b4;">
+        <h4>📄 Informe Preliminar 1</h4>
+        <p>Sube la plantilla del primer informe</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    word_file = st.file_uploader(
+        "Plantilla 1 (.docx)",
+        type=["docx"],
+        key="w1"
+    )
 
 with col2:
-    word_file_2 = st.file_uploader("📄 Plantilla Informe 2", type=["docx"], key="w2")
+    st.markdown("""
+    <div style="padding:15px;border-radius:12px;background:#eaffea;border-left:6px solid #2ca02c;">
+        <h4>📄 Informe Preliminar 2</h4>
+        <p>Sube la plantilla del segundo informe</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    preliminar2_word_file = st.file_uploader(
+        "Plantilla 2 (.docx)",
+        type=["docx"],
+        key="w2"
+    )
 
 
 # =========================
@@ -40,14 +62,17 @@ if st.button("🚀 Generar Reporte"):
 
         try:
             # =========================
-            # 🔥 LÓGICA ORIGINAL (SIN CAMBIOS)
+            # LEER ARCHIVOS (ORIGINAL)
             # =========================
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
-            doc1 = DocxTemplate(word_file_1) if word_file_1 else None
-            doc2 = DocxTemplate(word_file_2) if word_file_2 else None
+            doc = DocxTemplate(word_file) if word_file else None
+            doc_preliminar2 = DocxTemplate(preliminar2_word_file) if preliminar2_word_file else None
 
+            # =========================
+            # TOTALES REALES (ORIGINAL)
+            # =========================
             actividad = (
                 df['Actividad']
                 .astype(str)
@@ -58,20 +83,26 @@ if st.button("🚀 Generar Reporte"):
             total_controles = (actividad == 'CONTROL').sum()
             total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-            # ===== ES_CONTROL / ES_CN (ORIGINAL)
+            # =========================
+            # ES_CONTROL / ES_CN (ORIGINAL)
+            # =========================
             df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
 
-            # ===== FUNCIONARIO (ORIGINAL)
+            # =========================
+            # FUNCIONARIO (ORIGINAL)
+            # =========================
             df['Funcionario'] = (
                 df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Mat'].fillna('').astype(str).str.strip()
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
-            # ===== RUT + MERGE (ORIGINAL)
+            # =========================
+            # RUT MERGE (ORIGINAL)
+            # =========================
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
@@ -87,19 +118,26 @@ if st.button("🚀 Generar Reporte"):
 
             df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
-            # ===== INTERCONSULTA (ORIGINAL)
+            # =========================
+            # INTERCONSULTA (ORIGINAL)
+            # =========================
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
             total_inter = int(df['Interconsulta_Valida'].sum())
 
             resultado = total_escontrol - total_inter
 
-            # ===== ERROR (ORIGINAL)
-            df['Error_Final'] = (df['Es_control'] - df['Interconsulta_Valida'])
-            df['Error_Final'] = (df['Error_Final'] > 0).astype(int)
+            # =========================
+            # ERROR FINAL (ORIGINAL)
+            # =========================
+            df['Error_escontrol_menos_Inter'] = (df['Es_control'] - df['Interconsulta_Valida'])
+            df['Error_escontrol_menos_Inter'] = (df['Error_escontrol_menos_Inter'] > 0).astype(int)
 
-            df_controles = df[df['Error_Final'] == 1]
+            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
 
+            # =========================
+            # TABLAS (ORIGINAL)
+            # =========================
             tabla = (
                 df_controles
                 .groupby("Especialidad")
@@ -128,49 +166,51 @@ if st.button("🚀 Generar Reporte"):
                 'total_inter': total_inter,
                 'resultado_es_control_menos_interconsulta': resultado,
                 'especialidades': tabla.to_dict('records'),
+                'total_general_control': int(tabla['cantidad'].sum()),
+                'porc_escontrol_vs_controles': round((resultado/total_controles)*100,2) if total_controles else 0,
+                'porc_escontrol_vs_cn': round((resultado/total_consultas_nuevas)*100,2) if total_consultas_nuevas else 0,
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
             }
 
             # =========================
-            # RENDER
+            # RENDER (SIN ROMPER NADA)
             # =========================
-            if doc1:
-                doc1.render(contexto)
-            if doc2:
-                doc2.render(contexto)
+            if doc:
+                doc.render(contexto)
+            if doc_preliminar2:
+                doc_preliminar2.render(contexto)
 
             st.success("✅ Reporte generado correctamente")
 
             colA, colB = st.columns(2)
 
-            if doc1:
+            if doc:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
-                    doc1.save(tmp1.name)
-
+                    doc.save(tmp1.name)
                 with open(tmp1.name, "rb") as f1:
                     colA.download_button("📥 Informe 1", f1, file_name="Informe_1.docx")
 
-            if doc2:
+            if doc_preliminar2:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
-                    doc2.save(tmp2.name)
-
+                    doc_preliminar2.save(tmp2.name)
                 with open(tmp2.name, "rb") as f2:
                     colB.download_button("📥 Informe 2", f2, file_name="Informe_2.docx")
 
             # =========================
-            # KPIs
+            # RESULTADOS
             # =========================
-            st.markdown("## 📊 Resumen")
+            st.subheader("📊 Resultados")
 
             c1, c2, c3, c4 = st.columns(4)
-
             c1.metric("Control", total_escontrol)
             c2.metric("CN", total_escn)
             c3.metric("Interconsultas", total_inter)
             c4.metric("Resultado", resultado)
 
+            st.dataframe(tabla)
+
         except Exception as e:
             st.error(f"Error: {e}")
 
     else:
-        st.warning("⚠️ Debes subir datos y lista de espera")
+        st.warning("Debes subir los archivos base")
