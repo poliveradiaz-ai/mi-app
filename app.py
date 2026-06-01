@@ -123,7 +123,9 @@ if st.button("🚀 Generar Reporte"):
             # =========================
             # ERROR FINAL
             # =========================
-            resultado_es_control_menos_interconsulta = total_escontrol - total_inter
+            df['Error_Final'] = (df['Es_control'] - df['Interconsulta_Valida'])
+            df['Error_Final'] = (df['Error_Final'] > 0).astype(int)
+
             # =========================
             # TABLA FUNCIONARIOS (SEGÚN ERROR FINAL)
             # =========================
