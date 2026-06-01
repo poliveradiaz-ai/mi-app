@@ -47,7 +47,7 @@ def marcar_interconsulta_valida(fila):
 
 
 # =========================
-# DATOS GLOBALES (1 SOLO VEZ)
+# CARGA DE ARCHIVOS (UNA VEZ)
 # =========================
 
 st.header("📂 Carga de datos base")
@@ -55,33 +55,92 @@ st.header("📂 Carga de datos base")
 datos_file = st.file_uploader("Sube datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("Sube Lista_Espera.xlsx", type=["xlsx"])
 
+
+df_base = None
+lp_base = None
+
 # =========================
-# VALIDACIÓN GLOBAL
+# PREPROCESAMIENTO GLOBAL
 # =========================
 
-if not (datos_file and lp_file):
-    st.info("📌 Sube datos y lista de espera para habilitar los informes")
+if datos_file and lp_file:
 
-else:
+    df_base = pd.read_excel(
+        datos_file,
+        sheet_name="NOMINA CUADRATURA (REM7) SIN CO"
+    )
 
-    st.header("📑 Informes Preliminares")
+    lp_base = pd.read_excel(
+        lp_file,
+        sheet_name="Nomina Médico"
+    )
 
-    col1, col2 = st.columns(2)
+    # Flags
+    df_base[['Es_control', 'Es_CN']] = df_base.apply(
+        calcular_controlycn,
+        axis=1
+    )
 
-    # -------------------------
-    # PRELIMINAR 1
-    # -------------------------
-    with col1:
+    actividad = df_base['Actividad'].astype(str).str.strip().str.upper()
 
-        st.subheader("Preliminar 1")
+    total_controles = (actividad == 'CONTROL').sum()
+    total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
-        word1 = st.file_uploader(
-            "Plantilla Preliminar 1",
-            type=["docx"],
-            key="w1"
-        )
+    total_escontrol = int(df_base['Es_control'].sum())
+    total_cn_error = int(df_base['Es_CN'].sum())
 
-        if st.button("Generar Preliminar 1"):
+    # Merge interconsultas
+    df_base['rut_puente'] = df_base['Rut'].apply(limpiar_rut_definitivo)
+    lp_base['rut_puente'] = lp_base['Rut'].apply(limpiar_rut_definitivo)
+
+    df_base['esp_puente'] = df_base['Especialidad'].str.strip().str.upper()
+    lp_base['esp_puente'] = lp_base['Especialidad Destino'].str.strip().str.upper()
+
+    df_base = pd.merge(
+        df_base,
+        lp_base[['rut_puente','esp_puente','Num Interconsulta']],
+        on=['rut_puente','esp_puente'],
+        how='left'
+    )
+
+    df_base['Num Interconsulta'] = df_base['Num Interconsulta'].fillna(0)
+
+    df_base['Interconsulta_Valida'] = df_base.apply(
+        marcar_interconsulta_valida,
+        axis=1
+    )
+
+    total_inter = int(df_base['Interconsulta_Valida'].sum())
+
+    resultado = total_escontrol - total_inter
+
+
+# =========================
+# INTERFAZ
+# =========================
+
+st.header("📑 Informes Preliminares")
+
+col1, col2 = st.columns(2)
+
+
+# =========================
+# PRELIMINAR 1
+# =========================
+
+with col1:
+
+    st.subheader("Preliminar 1")
+
+    word1 = st.file_uploader(
+        "Plantilla Preliminar 1",
+        type=["docx"],
+        key="w1"
+    )
+
+    if st.button("Generar Preliminar 1"):
+
+        if df_base is not None:
 
             doc = DocxTemplate(word1)
 
@@ -108,20 +167,27 @@ else:
                         file_name="Preliminar_1.docx"
                     )
 
-    # -------------------------
-    # PRELIMINAR 2
-    # -------------------------
-    with col2:
+        else:
+            st.warning("Debes subir los archivos primero")
 
-        st.subheader("Preliminar 2")
 
-        word2 = st.file_uploader(
-            "Plantilla Preliminar 2",
-            type=["docx"],
-            key="w2"
-        )
+# =========================
+# PRELIMINAR 2
+# =========================
 
-        if st.button("Generar Preliminar 2"):
+with col2:
+
+    st.subheader("Preliminar 2")
+
+    word2 = st.file_uploader(
+        "Plantilla Preliminar 2",
+        type=["docx"],
+        key="w2"
+    )
+
+    if st.button("Generar Preliminar 2"):
+
+        if df_base is not None:
 
             doc = DocxTemplate(word2)
 
@@ -152,3 +218,14 @@ else:
                         f,
                         file_name="Preliminar_2.docx"
                     )
+
+        else:
+            st.warning("Debes subir los archivos primero")
+
+
+# =========================
+# MENSAJE FINAL
+# =========================
+
+if df_base is None:
+    st.info("📌 Sube datos y lista de espera para habilitar los informes")
