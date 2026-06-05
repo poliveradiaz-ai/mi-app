@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from docxtpl import DocxTemplate
 import tempfile
+from io import BytesIO
 
 st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
@@ -218,31 +219,46 @@ if st.button("🚀 Generar Reporte"):
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
             }
-
             # =========================
             # RENDER WORD
             # =========================
             if doc:
                 doc.render(contexto)
 
+                buffer1 = BytesIO()
+                doc.save(buffer1)
+                st.session_state["informe1"] = buffer1.getvalue()
+
             if doc2:
                 doc2.render(contexto)
 
+                buffer2 = BytesIO()
+                doc2.save(buffer2)
+                st.session_state["informe2"] = buffer2.getvalue()
+
             st.success("✅ Reporte generado correctamente")
 
+            # =========================
+            # DESCARGAS
+            # =========================
             colA, colB = st.columns(2)
 
-            if doc:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp1:
-                    doc.save(tmp1.name)
-                with open(tmp1.name, "rb") as f1:
-                    colA.download_button("📥 Informe 1", f1, file_name="Informe_1.docx")
+            if "informe1" in st.session_state:
+                colA.download_button(
+                    "📥 Informe 1",
+                    data=st.session_state["informe1"],
+                    file_name="Informe_1.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
 
-            if doc2:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp2:
-                    doc2.save(tmp2.name)
-                with open(tmp2.name, "rb") as f2:
-                    colB.download_button("📥 Informe 2", f2, file_name="Informe_2.docx")
+            if "informe2" in st.session_state:
+                colB.download_button(
+                    "📥 Informe 2",
+                    data=st.session_state["informe2"],
+                    file_name="Informe_2.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+         
 
             # =========================
             # RESULTADOS
