@@ -170,6 +170,7 @@ if st.button("🚀 Generar Reporte"):
                 })
             )
             df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
+            df_escn = df[df['Es_CN'] == 1]
             # =========================
             # TABLAS (ORIGINAL)
             # =========================
@@ -189,9 +190,8 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='total')
                 .sort_values(by='total', ascending=False)
             )
-            df_escn = df[df['Es_CN'] == 1]
-
-                tabla_escn = (
+  
+            tabla_escn = (
                 df_escn
                 .groupby('Especialidad')
                 .size()
