@@ -110,6 +110,9 @@ if st.button("🚀 Generar Reporte"):
             total_controles = (actividad == 'CONTROL').sum()
             total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
 
+            # =========================
+            # ES_CONTROL / ES_CN
+            # =========================
             df[['Es_control', 'Es_CN']] = df.apply(calcular_controlycn, axis=1)
 
             total_escontrol = int(df['Es_control'].sum())
@@ -133,11 +136,20 @@ if st.button("🚀 Generar Reporte"):
 
             resultado = total_escontrol - total_inter
 
+            # =========================
+            # 🔴 ERROR (ESTO ES LO QUE FALTABA EN ORDEN)
+            # =========================
+            df['Error_escontrol_menos_Inter'] = (df['Es_control'] - df['Interconsulta_Valida'])
+            df['Error_escontrol_menos_Inter'] = (df['Error_escontrol_menos_Inter'] > 0).astype(int)
+
+            # =========================
+            # FILTROS (DESPUÉS DEL ERROR)
+            # =========================
             df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
             df_escn = df[df['Es_CN'] == 1]
 
             # =========================
-            # TABLAS (ORIGINAL)
+            # TABLAS
             # =========================
             tabla = (
                 df_controles
@@ -162,7 +174,6 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='cantidad')
                 .sort_values(by='cantidad', ascending=False)
             )
-
             # =========================
             # CONTEXTO (ORIGINAL)
             # =========================
