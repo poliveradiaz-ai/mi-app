@@ -236,28 +236,38 @@ if st.button("🚀 Generar Reporte"):
                 doc2.save(buffer2)
                 st.session_state["informe2"] = buffer2.getvalue()
 
+            # Marcar que los reportes ya fueron generados
+            st.session_state["reportes_generados"] = True
+
             st.success("✅ Reporte generado correctamente")
+            # ==================================================
+            # DESCARGAS (FUERA DEL BOTÓN GENERAR)
+            # ==================================================
 
-            # =========================
-            # DESCARGAS
-            # =========================
-            colA, colB = st.columns(2)
+            if st.session_state.get("reportes_generados", False):
 
-            if "informe1" in st.session_state:
-                colA.download_button(
-                    "📥 Informe 1",
-                    data=st.session_state["informe1"],
-                    file_name="Informe_1.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
+                st.divider()
+                st.subheader("📥 Descargar Informes")
 
-            if "informe2" in st.session_state:
-                colB.download_button(
-                    "📥 Informe 2",
-                    data=st.session_state["informe2"],
-                    file_name="Informe_2.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
+                colA, colB = st.columns(2)
+
+                if "informe1" in st.session_state:
+                    colA.download_button(
+                        label="📥 Informe 1",
+                        data=st.session_state["informe1"],
+                        file_name="Informe_1.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key="descarga_informe_1"
+                    )
+
+                if "informe2" in st.session_state:
+                    colB.download_button(
+                        label="📥 Informe 2",
+                        data=st.session_state["informe2"],
+                        file_name="Informe_2.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key="descarga_informe_2"
+                    )
          
 
             # =========================
