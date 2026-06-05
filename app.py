@@ -133,8 +133,9 @@ if st.button("🚀 Generar Reporte"):
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
             total_inter = int(df['Interconsulta_Valida'].sum())
+            total_es_control_real = total_escontrol - total_inter
 
-            resultado = total_escontrol - total_inter
+            total_es_control_real = resultado
 
             # =========================
             # 🔴 ERROR (ESTO ES LO QUE FALTABA EN ORDEN)
@@ -152,7 +153,7 @@ if st.button("🚀 Generar Reporte"):
             # TABLAS
             # =========================
             tabla = (
-                df_controles
+                df[(df['Es_control'] == 1) & (df['Interconsulta_Valida'] == 0)]
                 .groupby("Especialidad")
                 .size()
                 .reset_index(name="cantidad")
