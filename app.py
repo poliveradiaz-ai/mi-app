@@ -205,6 +205,8 @@ if st.button("🚀 Generar Reporte"):
                 'total_general_control': int(tabla['cantidad'].sum()),
                 'porc_escontrol_vs_controles': round((resultado/total_controles)*100,2) if total_controles else 0,
                 'porc_escontrol_vs_cn': round((resultado/total_consultas_nuevas)*100,2) if total_consultas_nuevas else 0,
+                'porc_escn_vs_cn': f"{round((total_escn / total_consultas_nuevas) * 100, 2)}%" if total_consultas_nuevas else "0%",
+                'porc_escn_vs_controles': f"{round((total_escn / total_controles) * 100, 2)}%" if total_controles else "0%",
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
             }
 
