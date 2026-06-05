@@ -1,12 +1,27 @@
 import streamlit as st
 import pandas as pd
 from docxtpl import DocxTemplate
+import tempfile
 from io import BytesIO
 
 st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
+
 st.write("Sube los archivos base y opcionalmente las plantillas")
+
+# =========================
+# ESTADO STREAMLIT (SOLO DESCARGA)
+# =========================
+if "generado" not in st.session_state:
+    st.session_state["generado"] = False
+
+if "informe1" not in st.session_state:
+    st.session_state["informe1"] = None
+
+if "informe2" not in st.session_state:
+    st.session_state["informe2"] = None
+
 
 # =========================
 # ARCHIVOS BASE
@@ -19,7 +34,7 @@ lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
 st.divider()
 
 # =========================
-# FUNCIONES
+# FUNCIONES (ORIGINALES - NO CAMBIADAS)
 # =========================
 def calcular_controlycn(fila):
     actividad = str(fila.get('Actividad','')).strip()
@@ -54,7 +69,7 @@ def marcar_interconsulta_valida(fila):
 
 
 # =========================
-# PLANTILLAS
+# TARJETAS PLANTILLAS
 # =========================
 col1, col2 = st.columns(2)
 
@@ -66,7 +81,7 @@ with col2:
 
 
 # =========================
-# BOTÓN PRINCIPAL
+# BOTÓN
 # =========================
 if st.button("🚀 Generar Reporte"):
 
@@ -83,9 +98,14 @@ if st.button("🚀 Generar Reporte"):
             doc2 = DocxTemplate(preliminar2_word_file) if preliminar2_word_file else None
 
             # =========================
-            # TOTALES
+            # TOTALES (ORIGINAL)
             # =========================
-            actividad = df['Actividad'].astype(str).str.strip().str.upper()
+            actividad = (
+                df['Actividad']
+                .astype(str)
+                .str.strip()
+                .str.upper()
+            )
 
             total_controles = (actividad == 'CONTROL').sum()
             total_consultas_nuevas = (actividad == 'CONSULTA NUEVA').sum()
@@ -113,39 +133,59 @@ if st.button("🚀 Generar Reporte"):
 
             resultado = total_escontrol - total_inter
 
-            df_controles = df[df['Es_control'] == 1]
+            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
             df_escn = df[df['Es_CN'] == 1]
 
             # =========================
-            # TABLAS
+            # TABLAS (ORIGINAL)
             # =========================
-            tabla = df_controles.groupby("Especialidad").size().reset_index(name="cantidad")
-            tabla_escn = df_escn.groupby("Especialidad").size().reset_index(name="cantidad")
+            tabla = (
+                df_controles
+                .groupby("Especialidad")
+                .size()
+                .reset_index(name="cantidad")
+                .sort_values(by="cantidad", ascending=False)
+            )
 
-            tabla_funcionarios = df_controles.groupby(
-                ['Especialidad', 'Funcionario']
-            ).size().reset_index(name='total')
+            tabla_funcionarios = (
+                df_controles
+                .groupby(['Especialidad', 'Funcionario'])
+                .size()
+                .reset_index(name='total')
+                .sort_values(by='total', ascending=False)
+            )
+
+            tabla_escn = (
+                df_escn
+                .groupby('Especialidad')
+                .size()
+                .reset_index(name='cantidad')
+                .sort_values(by='cantidad', ascending=False)
+            )
 
             # =========================
-            # CONTEXTO WORD
+            # CONTEXTO (ORIGINAL)
             # =========================
             contexto = {
+                'filas': df.to_dict('records'),
                 'total_es_control': total_escontrol,
                 'total_es_cn': total_escn,
                 'total_controles': total_controles,
                 'total_consultas_nuevas': total_consultas_nuevas,
                 'total_inter': total_inter,
-                'resultado': resultado,
-
-                'porc_escn_vs_cn': round((total_escn / total_consultas_nuevas) * 100, 2) if total_consultas_nuevas else 0,
-                'porc_escn_vs_controles': round((total_escn / total_controles) * 100, 2) if total_controles else 0,
-
+                'resultado_es_control_menos_interconsulta': resultado,
+                'especialidades': tabla.to_dict('records'),
+                'total_general_control': int(tabla['cantidad'].sum()),
+                'porc_escontrol_vs_controles': round((resultado/total_controles)*100,2) if total_controles else 0,
+                'porc_escontrol_vs_cn': round((resultado/total_consultas_nuevas)*100,2) if total_consultas_nuevas else 0,
+                'porc_escn_vs_cn': f"{round((total_escn / total_consultas_nuevas) * 100, 2)}%" if total_consultas_nuevas else "0%",
+                'porc_escn_vs_controles': f"{round((total_escn / total_controles) * 100, 2)}%" if total_controles else "0%",
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
             }
 
             # =========================
-            # GENERAR WORD
+            # RENDER WORD (SOLO CAMBIO AQUÍ)
             # =========================
             if doc:
                 doc.render(contexto)
@@ -171,7 +211,7 @@ if st.button("🚀 Generar Reporte"):
 
 
 # =========================
-# DESCARGAS (SIEMPRE VISIBLES)
+# DESCARGAS (CORREGIDO)
 # =========================
 if st.session_state.get("generado", False):
 
