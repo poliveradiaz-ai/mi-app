@@ -189,7 +189,15 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='total')
                 .sort_values(by='total', ascending=False)
             )
-               
+            df_escn = df[df['Es_CN'] == 1]
+
+                tabla_escn = (
+                df_escn
+                .groupby('Especialidad')
+                .size()
+                .reset_index(name='cantidad')
+                .sort_values(by='cantidad', ascending=False)
+            )  
             # =========================
             # CONTEXTO (ORIGINAL)
             # =========================
@@ -208,6 +216,7 @@ if st.button("🚀 Generar Reporte"):
                 'porc_escn_vs_cn': f"{round((total_escn / total_consultas_nuevas) * 100, 2)}%" if total_consultas_nuevas else "0%",
                 'porc_escn_vs_controles': f"{round((total_escn / total_controles) * 100, 2)}%" if total_controles else "0%",
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
+                'tabla_escn': tabla_escn.to_dict('records'),
             }
 
             # =========================
