@@ -204,8 +204,27 @@ if st.button("🚀 Generar Reporte"):
                 'porc_escn_vs_controles': f"{round((total_escn / total_controles) * 100, 2)}%" if total_controles else "0%",
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
+                'tabla_funcionarios_escn': tabla_funcionarios_escn.to_dict('records'),
             }
 
+            # =========================
+            # TABLAS PARA EXCEL
+            # =========================
+            tabla_control_excel = tabla.rename(columns={
+                "cantidad": "total_es_control_real"
+            })
+            
+            tabla_funcionarios_control_excel = tabla_funcionarios.rename(columns={
+                "total": "total_es_control_real"
+            })
+            
+            tabla_escn_excel = tabla_escn.rename(columns={
+                "cantidad": "total_es_cn"
+            })
+            
+            tabla_funcionarios_escn_excel = tabla_funcionarios_escn.rename(columns={
+                "total": "total_es_cn"
+            })
             # =========================
             # RENDER WORD (SOLO CAMBIO AQUÍ)
             # =========================
@@ -228,38 +247,33 @@ if st.button("🚀 Generar Reporte"):
 
             with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
 
-                # Tabla principal de controles
-                tabla.to_excel(
+                resumen.to_excel(
                     writer,
-                    sheet_name="Especialidades_Control",
-                    index=False
-                )
-
-                # Tabla especialidad-funcionario
-                tabla_funcionarios.to_excel(
-                    writer,
-                    sheet_name="Funcionarios",
+                    sheet_name="Resumen",
                     index=False
                 )
             
-                # Tabla ES_CN
-                tabla_escn.to_excel(
+                tabla_control_excel.to_excel(
                     writer,
-                    sheet_name="Especialidades_CN",
+                    sheet_name="Control_Especialidad",
                     index=False
                 )
             
-                # Datos originales completos
-                df.to_excel(
+                tabla_funcionarios_control_excel.to_excel(
                     writer,
-                    sheet_name="Datos_Completos",
+                    sheet_name="Control_Funcionario",
                     index=False
                 )
             
-                # Lista de espera
-                lp.to_excel(
+                tabla_escn_excel.to_excel(
                     writer,
-                    sheet_name="Lista_Espera",
+                    sheet_name="CN_Especialidad",
+                    index=False
+                )
+            
+                tabla_funcionarios_escn_excel.to_excel(
+                    writer,
+                    sheet_name="CN_Funcionario",
                     index=False
                 )
 
