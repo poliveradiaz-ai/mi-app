@@ -207,6 +207,26 @@ if st.button("🚀 Generar Reporte"):
                 'tabla_funcionarios_escn': tabla_funcionarios_escn.to_dict('records'),
             }
 
+
+
+            resumen = pd.DataFrame({
+                "Indicador": [
+                    "Total Controles",
+                    "Total Consultas Nuevas",
+                    "Total ES_CONTROL",
+                    "Total ES_CN",
+                    "Total Interconsultas Válidas",
+                    "Total ES_CONTROL Real"
+                ],
+                "Valor": [
+                    total_controles,
+                    total_consultas_nuevas,
+                    total_escontrol,
+                    total_escn,
+                    total_inter,
+                    total_es_control_real
+                ]
+            })
             # =========================
             # TABLAS PARA EXCEL
             # =========================
