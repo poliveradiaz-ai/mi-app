@@ -177,6 +177,14 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='cantidad')
                 .sort_values(by='cantidad', ascending=False)
             )
+            
+            tabla_funcionarios_escn = (
+                df_escn
+                .groupby(['Especialidad', 'Funcionario'])
+                .size()
+                .reset_index(name='total')
+                .sort_values(by='total', ascending=False)
+            )
             # =========================
             # CONTEXTO (ORIGINAL)
             # =========================
