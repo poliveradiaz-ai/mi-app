@@ -299,10 +299,10 @@ if st.session_state.get("generado", False):
             key="dl2"
         )
     if st.session_state.get("excel"):
-    colC.download_button(
-        "📊 Reporte Excel",
-        data=st.session_state["excel"],
-        file_name="Reporte_Cuadratura.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key="dl_excel"
+        colC.download_button(
+            "📊 Reporte Excel",
+            data=st.session_state["excel"],
+            file_name="Reporte_Cuadratura.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_excel"
         )
