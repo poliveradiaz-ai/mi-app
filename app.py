@@ -305,4 +305,4 @@ if st.session_state.get("generado", False):
         file_name="Reporte_Cuadratura.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         key="dl_excel"
-    )
+        )
