@@ -135,9 +135,9 @@ if st.button("🚀 Generar Reporte"):
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
             total_inter = int(df['Interconsulta_Valida'].sum())
+            
             total_es_control_real = total_escontrol - total_inter
-
-            total_es_control_real = resultado
+        
 
             # =========================
             # 🔴 ERROR (ESTO ES LO QUE FALTABA EN ORDEN)
@@ -187,11 +187,11 @@ if st.button("🚀 Generar Reporte"):
                 'total_controles': total_controles,
                 'total_consultas_nuevas': total_consultas_nuevas,
                 'total_inter': total_inter,
-                'resultado_es_control_menos_interconsulta': resultado,
+                'resultado_es_control_menos_interconsulta': total_es_control_real,
                 'especialidades': tabla.to_dict('records'),
                 'total_general_control': int(tabla['cantidad'].sum()),
-                'porc_escontrol_vs_controles': round((resultado/total_controles)*100,2) if total_controles else 0,
-                'porc_escontrol_vs_cn': round((resultado/total_consultas_nuevas)*100,2) if total_consultas_nuevas else 0,
+                'porc_escontrol_vs_controles': round((total_es_control_real / total_controles) * 100, 2) if total_controles else 0,
+                'porc_escontrol_vs_cn': round((total_es_control_real / total_consultas_nuevas) * 100, 2) if total_consultas_nuevas else 0,
                 'porc_escn_vs_cn': f"{round((total_escn / total_consultas_nuevas) * 100, 2)}%" if total_consultas_nuevas else "0%",
                 'porc_escn_vs_controles': f"{round((total_escn / total_controles) * 100, 2)}%" if total_controles else "0%",
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
