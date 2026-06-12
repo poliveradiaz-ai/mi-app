@@ -146,7 +146,7 @@ if st.button("🚀 Generar Reporte"):
                     'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
                     'TRAUMATOLOGÍA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
                     'TRAUMATOLOGÍA Y ORTOPEDIA': 'TRAUMATOLOGIA Y ORTOPEDIA',
-            
+           
                     # GINECOLOGIA
                     'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA',
                     'GINECOLOGÍA GENERAL ADULTO': 'GINECOLOGIA',
@@ -176,16 +176,16 @@ if st.button("🚀 Generar Reporte"):
                 .size()
                 .reset_index(name='total')
             )
-            
+           
             tabla_funcionarios['orden_esp'] = tabla_funcionarios['Especialidad'].map(
                 {esp: i for i, esp in enumerate(orden_especialidades)}
             )
-            
+           
             tabla_funcionarios = tabla_funcionarios.sort_values(
                 by=['orden_esp', 'total'],
                 ascending=[True, False]
             ).drop(columns=['orden_esp'])
-            
+           
             tabla_escn = (
                 df_escn
                 .groupby('Especialidad')
@@ -200,24 +200,24 @@ if st.button("🚀 Generar Reporte"):
                 ['Especialidad']
                 .tolist()
             )
-            
+           
             tabla_funcionarios_cn = (
                 df_escn
                 .groupby(['Especialidad', 'Funcionario'])
                 .size()
                 .reset_index(name='total')
             )
-            
+           
             tabla_funcionarios_cn['orden_esp'] = tabla_funcionarios_cn['Especialidad'].map(
                 {esp: i for i, esp in enumerate(orden_especialidades_cn)}
             )
-            
+           
             tabla_funcionarios_cn = tabla_funcionarios_cn.sort_values(
                 by=['orden_esp', 'total'],
                 ascending=[True, False]
             ).drop(columns=['orden_esp'])
 
-            
+           
             contexto = {
                 'filas': df.to_dict('records'),
                 'total_es_control': total_escontrol,
@@ -280,38 +280,3 @@ with colB:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             key="dl_2"
         )
-
-output = BytesIO()
-
-# Copias seguras (evita errores por rerun de Streamlit)
-tabla_excel = tabla.copy()
-tabla_funcionarios_excel = tabla_funcionarios.copy()
-tabla_escn_excel = tabla_escn.copy()
-tabla_funcionarios_cn_excel = tabla_funcionarios_cn.copy()
-
-with pd.ExcelWriter(output, engine='openpyxl') as writer:
-
-    output = BytesIO()
-
-with pd.ExcelWriter(output, engine='openpyxl') as writer:
-
-    # SIEMPRE escribir algo base (evita crash)
-    base = pd.DataFrame({
-        "estado": ["reporte generado correctamente"]
-    })
-    base.to_excel(writer, sheet_name="estado", index=False)
-
-    # luego las reales si existen
-    if 'tabla' in locals():
-        tabla.to_excel(writer, sheet_name="es_control_resumen", index=False)
-
-    if 'tabla_funcionarios' in locals():
-        tabla_funcionarios.to_excel(writer, sheet_name="es_control_funcionarios", index=False)
-
-    if 'tabla_escn' in locals():
-        tabla_escn.to_excel(writer, sheet_name="es_cn_resumen", index=False)
-
-    if 'tabla_funcionarios_cn' in locals():
-        tabla_funcionarios_cn.to_excel(writer, sheet_name="es_cn_funcionarios", index=False)
-
-output.seek(0)
