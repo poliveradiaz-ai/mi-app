@@ -173,7 +173,7 @@ if st.button("🚀 Generar Reporte"):
                 .groupby(['Especialidad', 'Funcionario'])
                 .size()
                 .reset_index(name='total')
-                .sort_values(by='total', ascending=False)
+                .sort_values(by=['Especialidad', 'total'], ascending=[True, False])
             )
 
             tabla_escn = (
