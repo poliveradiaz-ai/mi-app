@@ -135,7 +135,6 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             total_es_control_real = total_escontrol - total_inter
 
-            resultado = total_escontrol - total_inter
             total_es_control_real = resultado
 
             # =========================
@@ -154,7 +153,6 @@ if st.button("🚀 Generar Reporte"):
             # TABLAS
             # =========================
             tabla = (
-                df_controles
                 df[(df['Es_control'] == 1) & (df['Interconsulta_Valida'] == 0)]
                 .groupby("Especialidad")
                 .size()
@@ -251,4 +249,3 @@ if st.session_state.get("generado", False):
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             key="dl2"
         )
-
