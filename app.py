@@ -173,7 +173,17 @@ if st.button("🚀 Generar Reporte"):
                 .groupby(['Especialidad', 'Funcionario'])
                 .size()
                 .reset_index(name='total')
-                .sort_values(by=['Especialidad', 'total'], ascending=[True, False])
+            )
+            
+            tabla_funcionarios['Especialidad'] = pd.Categorical(
+                tabla_funcionarios['Especialidad'],
+                categories=orden_especialidades,
+                ordered=True
+            )
+            
+            tabla_funcionarios = tabla_funcionarios.sort_values(
+                ['Especialidad', 'total'],
+                ascending=[True, False]
             )
 
             tabla_escn = (
