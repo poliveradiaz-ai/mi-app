@@ -140,7 +140,17 @@ if st.button("🚀 Generar Reporte"):
 
             # =========================
             # 🔴 ERROR (ESTO ES LO QUE FALTABA EN ORDEN)
-@@ -152,99 +153,99 @@
+            # =========================
+            df['Error_escontrol_menos_Inter'] = (df['Es_control'] - df['Interconsulta_Valida'])
+            df['Error_escontrol_menos_Inter'] = (df['Error_escontrol_menos_Inter'] > 0).astype(int)
+
+            # =========================
+            # FILTROS (DESPUÉS DEL ERROR)
+            # =========================
+            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
+            df_escn = df[df['Es_CN'] == 1]
+
+            # =========================
             # TABLAS
             # =========================
             tabla = (
