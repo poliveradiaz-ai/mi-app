@@ -281,6 +281,7 @@ if st.button("🚀 Generar Reporte"):
             c4.metric("Resultado", resultado)
 
             st.dataframe(tabla)
+            mostrar_descargas()
 
         except Exception as e:
             st.error(f"Error: {e}")
