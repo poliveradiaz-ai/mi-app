@@ -3,4 +3,3 @@ pandas
 openpyxl
 docxtpl
 python-docx
-xlsxwriter
