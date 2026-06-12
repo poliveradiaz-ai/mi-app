@@ -157,6 +157,9 @@ if st.button("🚀 Generar Reporte"):
             df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
             df_escn = df[df['Es_CN'] == 1]
 
+            df_controles = df[df['Error_escontrol_menos_Inter'] == 1].copy()
+            df_escn = df[df['Es_CN'] == 1].copy()
+           
             tabla = (
                 df_controles
                 .groupby("Especialidad")
