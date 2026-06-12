@@ -133,7 +133,28 @@ if st.button("🚀 Generar Reporte"):
             # INTERCONSULTA
             # =========================
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
-
+            
+            # MOSTRAR INTERCONSULTAS VÁLIDAS
+            st.subheader("🔍 Interconsultas válidas detectadas")
+            
+            inter_validas = df[df['Interconsulta_Valida'] == 1]
+            
+            st.write(f"Total detectadas: {len(inter_validas)}")
+            
+            st.dataframe(
+                inter_validas[
+                    [
+                        'Actividad',
+                        'Ic Asoc Hora',
+                        'Num Interconsulta',
+                        'Especialidad',
+                        'Nombres',
+                        'Apellido Pat',
+                        'Apellido Mat'
+                    ]
+                ]
+            )
+            
             total_inter = int(df['Interconsulta_Valida'].sum())
             
             total_es_control_real = total_escontrol - total_inter
