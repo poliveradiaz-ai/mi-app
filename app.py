@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from docxtpl import DocxTemplate
-import tempfile
 from io import BytesIO
 
 st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
@@ -11,7 +10,7 @@ st.title("📊 Generador de Reportes Médicos")
 st.write("Sube los archivos base y opcionalmente las plantillas")
 
 # =========================
-# ESTADO STREAMLIT (SOLO DESCARGA)
+# ESTADO STREAMLIT
 # =========================
 if "generado" not in st.session_state:
     st.session_state["generado"] = False
@@ -26,14 +25,13 @@ if "excel" not in st.session_state:
     st.session_state["excel"] = None
 
 # =========================
-# ARCHIVOS BASE
+# ARCHIVOS
 # =========================
-st.markdown("## 📂 Archivos base")
-
 datos_file = st.file_uploader("📄 Subir datos.xlsx", type=["xlsx"])
 lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
 
-st.divider()
+word_file = st.file_uploader("Plantilla 1 (.docx)", type=["docx"])
+word_file2 = st.file_uploader("Plantilla 2 (.docx)", type=["docx"])
 
 # =========================
 # FUNCIONES
@@ -85,15 +83,12 @@ if st.button("🚀 Generar Reporte"):
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
             # =========================================================
-            # 🔥 FIX CLAVE: CRUCE DE RUT + NUM INTERCONSULTA
+            # 🔥 FIX CRUCE RUT + INTERCONSULTA
             # =========================================================
             df['Rut_Limpio'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['Rut_Limpio'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
-            lp['Num Interconsulta'] = pd.to_numeric(
-                lp['Num Interconsulta'],
-                errors='coerce'
-            ).fillna(0)
+            lp['Num Interconsulta'] = pd.to_numeric(lp['Num Interconsulta'], errors='coerce').fillna(0)
 
             df = df.merge(
                 lp[['Rut_Limpio', 'Num Interconsulta']],
@@ -121,6 +116,9 @@ if st.button("🚀 Generar Reporte"):
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
 
+            # =========================
+            # FUNCIONARIO
+            # =========================
             df['Funcionario'] = (
                 df['Nombres'].fillna('').astype(str).str.strip() + ' ' +
                 df['Apellido Pat'].fillna('').astype(str).str.strip() + ' ' +
@@ -132,41 +130,8 @@ if st.button("🚀 Generar Reporte"):
             # =========================
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
-            st.subheader("🔍 Interconsultas válidas detectadas")
-
-            inter_validas = df[df['Interconsulta_Valida'] == 1]
-
-            st.write(f"Total detectadas: {len(inter_validas)}")
-
-            st.dataframe(
-                inter_validas[
-                    [
-                        'Actividad',
-                        'Ic Asoc Hora',
-                        'Num Interconsulta',
-                        'Especialidad',
-                        'Nombres',
-                        'Apellido Pat',
-                        'Apellido Mat'
-                    ]
-                ]
-            )
-
             total_inter = int(df['Interconsulta_Valida'].sum())
-
             total_es_control_real = total_escontrol - total_inter
-
-            # =========================
-            # ERROR ES CONTROL
-            # =========================
-            df['Error_escontrol_menos_Inter'] = (df['Es_control'] - df['Interconsulta_Valida'])
-            df['Error_escontrol_menos_Inter'] = (df['Error_escontrol_menos_Inter'] > 0).astype(int)
-
-            # =========================
-            # FILTROS
-            # =========================
-            df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
-            df_escn = df[df['Es_CN'] == 1]
 
             # =========================
             # TABLAS
@@ -176,50 +141,10 @@ if st.button("🚀 Generar Reporte"):
                 .groupby("Especialidad")
                 .size()
                 .reset_index(name="cantidad")
-                .sort_values(by="cantidad", ascending=False)
-            )
-
-            tabla_funcionarios = (
-                df_controles
-                .groupby(['Especialidad', 'Funcionario'])
-                .size()
-                .reset_index(name='total')
-                .sort_values(by='total', ascending=False)
-            )
-
-            tabla_escn = (
-                df_escn
-                .groupby('Especialidad')
-                .size()
-                .reset_index(name='cantidad')
-                .sort_values(by='cantidad', ascending=False)
-            )
-
-            tabla_funcionarios_escn = (
-                df_escn
-                .groupby(['Especialidad', 'Funcionario'])
-                .size()
-                .reset_index(name='total')
-                .sort_values(by='total', ascending=False)
             )
 
             # =========================
-            # CONTEXTO
-            # =========================
-            contexto = {
-                'filas': df.to_dict('records'),
-                'total_es_control': total_escontrol,
-                'total_es_cn': total_escn,
-                'total_controles': total_controles,
-                'total_consultas_nuevas': total_consultas_nuevas,
-                'total_inter': total_inter,
-                'resultado_es_control_menos_interconsulta': total_es_control_real,
-                'especialidades': tabla.to_dict('records'),
-                'total_general_control': int(tabla['cantidad'].sum()),
-            }
-
-            # =========================
-            # EXCEL
+            # EXCEL - RESUMEN Y TABLAS
             # =========================
             resumen = pd.DataFrame({
                 "Indicador": [
@@ -239,14 +164,53 @@ if st.button("🚀 Generar Reporte"):
                     total_es_control_real
                 ]
             })
-
+            
+            tabla_control_excel = tabla.copy()
+            
             excel_buffer = BytesIO()
-
+            
             with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
                 resumen.to_excel(writer, sheet_name="Resumen", index=False)
-
+                tabla_control_excel.to_excel(writer, sheet_name="Control_Especialidad", index=False)
+            
             excel_buffer.seek(0)
+            
             st.session_state["excel"] = excel_buffer.getvalue()
+            # =========================
+            # CONTEXTO WORD (INTOCADO PERO FUNCIONAL)
+            # =========================
+            contexto = {
+                'filas': df.to_dict('records'),
+                'total_es_control': total_escontrol,
+                'total_es_cn': total_escn,
+                'total_controles': total_controles,
+                'total_consultas_nuevas': total_consultas_nuevas,
+                'total_inter': total_inter,
+                'resultado_es_control_menos_interconsulta': total_es_control_real,
+                'especialidades': tabla.to_dict('records'),
+            }
+
+            # =========================
+            # WORD 1
+            # =========================
+            if word_file:
+                doc = DocxTemplate(word_file)
+                doc.render(contexto)
+
+                buffer = BytesIO()
+                doc.save(buffer)
+                st.session_state["informe1"] = buffer.getvalue()
+
+            # =========================
+            # WORD 2
+            # =========================
+            if word_file2:
+                doc2 = DocxTemplate(word_file2)
+                doc2.render(contexto)
+
+                buffer2 = BytesIO()
+                doc2.save(buffer2)
+                st.session_state["informe2"] = buffer2.getvalue()
 
             st.session_state["generado"] = True
             st.success("✅ Reporte generado correctamente")
@@ -256,7 +220,6 @@ if st.button("🚀 Generar Reporte"):
 
     else:
         st.warning("Debes subir los archivos base")
-
 
 # =========================
 # DESCARGAS
@@ -283,7 +246,6 @@ if st.session_state.get("generado", False):
             file_name="Informe_2.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
-
     if st.session_state.get("excel"):
         colC.download_button(
             "📊 Reporte Excel",
