@@ -136,18 +136,43 @@ if st.button("🚀 Generar Reporte"):
                 (df['Es_control'] - df['Interconsulta_Valida']) > 0
             ).astype(int)
 
-            df['Especialidad'] = df['Especialidad'].astype(str).str.strip()
+            df['Especialidad'] = (
+                df['Especialidad']
+                .astype(str)
+                .str.strip()
+                .replace({
+                    'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
+                    'TRAUMATOLOGÍA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
+                    'TRAUMATOLOGÍA Y ORTOPEDIA': 'TRAUMATOLOGIA Y ORTOPEDIA'
+                })
+            )
 
             df_controles = df[df['Error_escontrol_menos_Inter'] == 1]
             df_escn = df[df['Es_CN'] == 1]
 
-            tabla = df_controles.groupby("Especialidad").size().reset_index(name="cantidad")
+            tabla = (
+                df_controles
+                .groupby("Especialidad")
+                .size()
+                .reset_index(name="cantidad")
+                .sort_values(by="cantidad", ascending=False)
+            )
 
-            tabla_funcionarios = df_controles.groupby(
-                ['Especialidad', 'Funcionario']
-            ).size().reset_index(name='total')
+            tabla_funcionarios = (
+                df_controles
+                .groupby(['Especialidad', 'Funcionario'])
+                .size()
+                .reset_index(name='total')
+                .sort_values(by='total', ascending=False)
+            )
 
-            tabla_escn = df_escn.groupby("Especialidad").size().reset_index(name="cantidad")
+            tabla_escn = (
+                df_escn
+                .groupby('Especialidad')
+                .size()
+                .reset_index(name='cantidad')
+                .sort_values(by='cantidad', ascending=False)
+            )
 
             contexto = {
                 'filas': df.to_dict('records'),
