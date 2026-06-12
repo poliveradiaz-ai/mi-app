@@ -175,16 +175,15 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='total')
             )
             
-            tabla_funcionarios['Especialidad'] = pd.Categorical(
-                tabla_funcionarios['Especialidad'],
-                categories=orden_especialidades,
-                ordered=True
+            # FORZAR ORDEN REAL (sin alfabeto)
+            tabla_funcionarios['orden_esp'] = tabla_funcionarios['Especialidad'].map(
+                {esp: i for i, esp in enumerate(orden_especialidades)}
             )
             
             tabla_funcionarios = tabla_funcionarios.sort_values(
-                ['Especialidad', 'total'],
+                by=['orden_esp', 'total'],
                 ascending=[True, False]
-            )
+            ).drop(columns=['orden_esp'])
 
             tabla_escn = (
                 df_escn
