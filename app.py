@@ -22,6 +22,8 @@ if "informe1" not in st.session_state:
 if "informe2" not in st.session_state:
     st.session_state["informe2"] = None
 
+if "excel" not in st.session_state:
+    st.session_state["excel"] = None
 
 # =========================
 # ARCHIVOS BASE
@@ -211,6 +213,53 @@ if st.button("🚀 Generar Reporte"):
                 doc2.save(buffer2)
                 st.session_state["informe2"] = buffer2.getvalue()
 
+            # =========================
+            # GENERAR EXCEL
+            # =========================
+            excel_buffer = BytesIO()
+
+            with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+
+                # Tabla principal de controles
+                tabla.to_excel(
+                    writer,
+                    sheet_name="Especialidades_Control",
+                    index=False
+                )
+
+                # Tabla especialidad-funcionario
+                tabla_funcionarios.to_excel(
+                    writer,
+                    sheet_name="Funcionarios",
+                    index=False
+                )
+            
+                # Tabla ES_CN
+                tabla_escn.to_excel(
+                    writer,
+                    sheet_name="Especialidades_CN",
+                    index=False
+                )
+            
+                # Datos originales completos
+                df.to_excel(
+                    writer,
+                    sheet_name="Datos_Completos",
+                    index=False
+                )
+            
+                # Lista de espera
+                lp.to_excel(
+                    writer,
+                    sheet_name="Lista_Espera",
+                    index=False
+                )
+
+            excel_buffer.seek(0)
+
+            st.session_state["excel"] = excel_buffer.getvalue()
+
+            
             st.session_state["generado"] = True
 
             st.success("✅ Reporte generado correctamente")
@@ -230,7 +279,7 @@ if st.session_state.get("generado", False):
     st.divider()
     st.subheader("📥 Descargar Informes")
 
-    colA, colB = st.columns(2)
+    colA, colB, colC = st.columns(3)
 
     if st.session_state.get("informe1"):
         colA.download_button(
@@ -248,4 +297,12 @@ if st.session_state.get("generado", False):
             file_name="Informe_2.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             key="dl2"
+        )
+    if st.session_state.get("excel"):
+    colC.download_button(
+        "📊 Reporte Excel",
+        data=st.session_state["excel"],
+        file_name="Reporte_Cuadratura.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="dl_excel"
         )
