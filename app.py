@@ -194,6 +194,23 @@ if st.button("🚀 Generar Reporte"):
                 .sort_values(by='cantidad', ascending=False)
             )
 
+            tabla_funcionarios_cn = (
+                df_escn
+                .groupby(['Especialidad', 'Funcionario'])
+                .size()
+                .reset_index(name='total')
+            )
+
+            tabla_funcionarios_cn['orden_esp'] = tabla_funcionarios_cn['Especialidad'].map(
+                {esp: i for i, esp in enumerate(orden_especialidades)}
+            )
+            
+            tabla_funcionarios_cn = tabla_funcionarios_cn.sort_values(
+                by=['orden_esp', 'total'],
+                ascending=[True, False]
+            ).drop(columns=['orden_esp'])
+
+            
             contexto = {
                 'filas': df.to_dict('records'),
                 'total_es_control': total_escontrol,
@@ -205,6 +222,7 @@ if st.button("🚀 Generar Reporte"):
                 'especialidades': tabla.to_dict('records'),
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
+                'tabla_funcionarios_cn': tabla_funcionarios_cn.to_dict('records'),
             }
 
             if doc:
