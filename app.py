@@ -168,6 +168,8 @@ if st.button("🚀 Generar Reporte"):
                 .sort_values(by="cantidad", ascending=False)
             )
 
+            orden_especialidades = tabla['Especialidad'].tolist()
+
             tabla_funcionarios = (
                 df_controles
                 .groupby(['Especialidad', 'Funcionario'])
@@ -175,7 +177,6 @@ if st.button("🚀 Generar Reporte"):
                 .reset_index(name='total')
             )
             
-            # FORZAR ORDEN REAL (sin alfabeto)
             tabla_funcionarios['orden_esp'] = tabla_funcionarios['Especialidad'].map(
                 {esp: i for i, esp in enumerate(orden_especialidades)}
             )
@@ -184,7 +185,7 @@ if st.button("🚀 Generar Reporte"):
                 by=['orden_esp', 'total'],
                 ascending=[True, False]
             ).drop(columns=['orden_esp'])
-
+            
             tabla_escn = (
                 df_escn
                 .groupby('Especialidad')
