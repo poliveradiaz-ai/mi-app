@@ -144,6 +144,8 @@ if st.button("🚀 Generar Reporte"):
                 .replace({
                     # TRAUMATOLOGIA
                     'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
+                    'TRAUMATOLOGÍA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
+                    'TRAUMATOLOGÍA Y ORTOPEDIA': 'TRAUMATOLOGIA Y ORTOPEDIA',
             
                     # GINECOLOGIA
                     'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA',
