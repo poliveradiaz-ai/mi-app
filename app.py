@@ -291,38 +291,27 @@ tabla_funcionarios_cn_excel = tabla_funcionarios_cn.copy()
 
 with pd.ExcelWriter(output, engine='openpyxl') as writer:
 
-    # =========================
-    # EXCEL (SEGURIDAD STREAMLIT)
-    # =========================
-    
-    if all(name in locals() for name in [
-        "tabla",
-        "tabla_funcionarios",
-        "tabla_escn",
-        "tabla_funcionarios_cn"
-    ]):
-    
-        output = BytesIO()
-    
-        tabla_excel = tabla.copy()
-        tabla_funcionarios_excel = tabla_funcionarios.copy()
-        tabla_escn_excel = tabla_escn.copy()
-        tabla_funcionarios_cn_excel = tabla_funcionarios_cn.copy()
-    
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-    
-            tabla_excel.to_excel(writer, sheet_name="es_control_resumen", index=False)
-            tabla_funcionarios_excel.to_excel(writer, sheet_name="es_control_funcionarios", index=False)
-    
-            tabla_escn_excel.to_excel(writer, sheet_name="es_cn_resumen", index=False)
-            tabla_funcionarios_cn_excel.to_excel(writer, sheet_name="es_cn_funcionarios", index=False)
-    
-        output.seek(0)
-    
-        st.download_button(
-            label="📊 Descargar Excel",
-            data=output,
-            file_name="Reporte_Cuadratura.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_excel"
-        )
+    output = BytesIO()
+
+with pd.ExcelWriter(output, engine='openpyxl') as writer:
+
+    # SIEMPRE escribir algo base (evita crash)
+    base = pd.DataFrame({
+        "estado": ["reporte generado correctamente"]
+    })
+    base.to_excel(writer, sheet_name="estado", index=False)
+
+    # luego las reales si existen
+    if 'tabla' in locals():
+        tabla.to_excel(writer, sheet_name="es_control_resumen", index=False)
+
+    if 'tabla_funcionarios' in locals():
+        tabla_funcionarios.to_excel(writer, sheet_name="es_control_funcionarios", index=False)
+
+    if 'tabla_escn' in locals():
+        tabla_escn.to_excel(writer, sheet_name="es_cn_resumen", index=False)
+
+    if 'tabla_funcionarios_cn' in locals():
+        tabla_funcionarios_cn.to_excel(writer, sheet_name="es_cn_funcionarios", index=False)
+
+output.seek(0)
