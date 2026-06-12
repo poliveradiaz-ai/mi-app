@@ -281,33 +281,52 @@ with colB:
             key="dl_2"
         )
 
-# =========================
-# DESCARGA EXCEL
-# =========================
+output = BytesIO()
 
-if st.session_state.get("informe1") is not None:  # reutilizamos como "ya generado"
+# Copias seguras (evita errores por rerun de Streamlit)
+tabla_excel = tabla.copy()
+tabla_funcionarios_excel = tabla_funcionarios.copy()
+tabla_escn_excel = tabla_escn.copy()
+tabla_funcionarios_cn_excel = tabla_funcionarios_cn.copy()
 
-    output = BytesIO()
+with pd.ExcelWriter(output, engine='openpyxl') as writer:
 
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-
-        # =========================
-        # ES_CONTROL
-        # =========================
-        tabla.to_excel(writer, sheet_name="es_control_resumen", index=False)
-        tabla_funcionarios.to_excel(writer, sheet_name="es_control_funcionarios", index=False)
-
-        # =========================
-        # ES_CN
-        # =========================
-        tabla_escn.to_excel(writer, sheet_name="es_cn_resumen", index=False)
-        tabla_funcionarios_cn.to_excel(writer, sheet_name="es_cn_funcionarios", index=False)
-
-    output.seek(0)
-
-    st.download_button(
-        label="📊 Descargar Excel",
-        data=output,
-        file_name="Reporte_Cuadratura.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    # =========================
+    # ES_CONTROL
+    # =========================
+    tabla_excel.to_excel(
+        writer,
+        sheet_name="es_control_resumen",
+        index=False
     )
+
+    tabla_funcionarios_excel.to_excel(
+        writer,
+        sheet_name="es_control_funcionarios",
+        index=False
+    )
+
+    # =========================
+    # ES_CN
+    # =========================
+    tabla_escn_excel.to_excel(
+        writer,
+        sheet_name="es_cn_resumen",
+        index=False
+    )
+
+    tabla_funcionarios_cn_excel.to_excel(
+        writer,
+        sheet_name="es_cn_funcionarios",
+        index=False
+    )
+
+output.seek(0)
+
+st.download_button(
+    label="📊 Descargar Excel",
+    data=output,
+    file_name="Reporte_Cuadratura.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    key="download_excel"
+)
