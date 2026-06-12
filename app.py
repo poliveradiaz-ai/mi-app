@@ -140,10 +140,15 @@ if st.button("🚀 Generar Reporte"):
                 df['Especialidad']
                 .astype(str)
                 .str.strip()
+                .str.upper()
                 .replace({
+                    # TRAUMATOLOGIA
                     'TRAUMATOLOGIA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
-                    'TRAUMATOLOGÍA Y ORTOPEDIA ADULTO': 'TRAUMATOLOGIA Y ORTOPEDIA',
-                    'TRAUMATOLOGÍA Y ORTOPEDIA': 'TRAUMATOLOGIA Y ORTOPEDIA'
+            
+                    # GINECOLOGIA
+                    'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA',
+                    'GINECOLOGÍA GENERAL ADULTO': 'GINECOLOGIA',
+                    'GINECOLOGÍA': 'GINECOLOGIA'
                 })
             )
 
