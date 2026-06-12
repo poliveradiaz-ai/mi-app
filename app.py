@@ -289,7 +289,7 @@ if st.session_state.get("informe1") is not None:  # reutilizamos como "ya genera
 
     output = BytesIO()
 
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
 
         # =========================
         # ES_CONTROL
