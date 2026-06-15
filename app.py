@@ -106,7 +106,7 @@ if st.button("🚀 Generar Reporte"):
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
-
+            
             df['Funcionario'] = (
                 df['Nombres'].fillna('').astype(str) + ' ' +
                 df['Apellido Pat'].fillna('').astype(str) + ' ' +
@@ -133,6 +133,16 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado = total_escontrol - total_inter
 
+
+            porc_escontrol_vs_controles = (
+                resultado / total_controles * 100
+            ) if total_controles != 0 else 0
+            
+            porc_escontrol_vs_cn = (
+                resultado / total_escn * 100
+            ) if total_escn != 0 else 0
+
+            
             df['Error_escontrol_menos_Inter'] = (
                 (df['Es_control'] - df['Interconsulta_Valida']) > 0
             ).astype(int)
@@ -248,6 +258,8 @@ if st.button("🚀 Generar Reporte"):
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
                 'tabla_funcionarios_cn': tabla_funcionarios_cn.to_dict('records'),
+                'porc_escontrol_vs_controles': porc_escontrol_vs_controles,
+                'porc_escontrol_vs_cn': porc_escontrol_vs_cn,
             }
 
             if doc:
