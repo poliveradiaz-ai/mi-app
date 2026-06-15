@@ -139,8 +139,11 @@ if st.button("🚀 Generar Reporte"):
             ) if total_controles != 0 else 0
             
             porc_escontrol_vs_cn = (
-                resultado / total_escn * 100
+                resultado / total_consultas_nuevas * 100
             ) if total_escn != 0 else 0
+
+            porc_escontrol_vs_controles = round(porc_escontrol_vs_controles, 1)
+            porc_escontrol_vs_cn = round(porc_escontrol_vs_cn, 1)
 
             
             df['Error_escontrol_menos_Inter'] = (
