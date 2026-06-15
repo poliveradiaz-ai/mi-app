@@ -246,8 +246,11 @@ if st.button("🚀 Generar Reporte"):
 
             st.success("✅ Reporte generado correctamente")
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+        import traceback
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+        st.code(traceback.format_exc())
 
     else:
         st.warning("Debes subir los archivos base")
