@@ -4,6 +4,7 @@ from docxtpl import DocxTemplate
 import tempfile
 from io import BytesIO
 import traceback
+
 st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
@@ -217,7 +218,24 @@ if st.button("🚀 Generar Reporte"):
                 ascending=[True, False]
             ).drop(columns=['orden_esp'])
 
-           
+           # =========================
+            # 📊 GENERAR EXCEL
+            # =========================
+            from io import BytesIO
+            
+            output = BytesIO()
+            
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            
+                tabla_escn.to_excel(writer, sheet_name='ES_CN_Especialidad', index=False)
+                tabla_funcionarios_cn.to_excel(writer, sheet_name='ES_CN_Funcionario', index=False)
+                tabla.to_excel(writer, sheet_name='CONTROL_Especialidad', index=False)
+                tabla_funcionarios.to_excel(writer, sheet_name='CONTROL_Funcionario', index=False)
+            
+                writer.close()
+            
+            st.session_state["reporte_excel"] = output.getvalue()
+
             contexto = {
                 'filas': df.to_dict('records'),
                 'total_es_control': total_escontrol,
@@ -262,7 +280,7 @@ if st.button("🚀 Generar Reporte"):
 st.divider()
 st.subheader("📥 Descargar Informes")
 
-colA, colB = st.columns(2)
+colA, colB, colC = st.columns(3)
 
 with colA:
     if st.session_state["informe1"]:
@@ -282,4 +300,14 @@ with colB:
             file_name="Informe_2.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             key="dl_2"
+        )
+
+with colC:
+    if st.session_state.get("reporte_excel"):
+    
+        st.download_button(
+            "📥 Descargar Excel consolidado",
+            data=st.session_state["reporte_excel"],
+            file_name="Reporte_Consolidado.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
