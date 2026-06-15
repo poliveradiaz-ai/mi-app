@@ -246,7 +246,7 @@ if st.button("🚀 Generar Reporte"):
 
             st.success("✅ Reporte generado correctamente")
 
-        import traceback
+    import traceback
 
     except Exception as e:
         st.error(f"Error: {e}")
