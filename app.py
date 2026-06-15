@@ -225,7 +225,7 @@ if st.button("🚀 Generar Reporte"):
             
             output = BytesIO()
             
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
             
                 tabla_escn.to_excel(writer, sheet_name='ES_CN_Especialidad', index=False)
                 tabla_funcionarios_cn.to_excel(writer, sheet_name='ES_CN_Funcionario', index=False)
