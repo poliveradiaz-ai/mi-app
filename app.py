@@ -3,7 +3,7 @@ import pandas as pd
 from docxtpl import DocxTemplate
 import tempfile
 from io import BytesIO
-
+import traceback
 st.set_page_config(page_title="Reporte Cuadratura", layout="wide")
 
 st.title("📊 Generador de Reportes Médicos")
@@ -246,7 +246,7 @@ if st.button("🚀 Generar Reporte"):
 
             st.success("✅ Reporte generado correctamente")
 
-    import traceback
+    
 
     except Exception as e:
         st.error(f"Error: {e}")
