@@ -230,6 +230,7 @@ if st.button("🚀 Generar Reporte"):
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
                 'tabla_funcionarios_cn': tabla_funcionarios_cn.to_dict('records'),
+                'f': total_escn,
             }
 
             if doc:
