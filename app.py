@@ -224,17 +224,17 @@ if st.button("🚀 Generar Reporte"):
             from io import BytesIO
             
             output = BytesIO()
-            
+
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            
                 tabla_escn.to_excel(writer, sheet_name='ES_CN_Especialidad', index=False)
                 tabla_funcionarios_cn.to_excel(writer, sheet_name='ES_CN_Funcionario', index=False)
                 tabla.to_excel(writer, sheet_name='CONTROL_Especialidad', index=False)
                 tabla_funcionarios.to_excel(writer, sheet_name='CONTROL_Funcionario', index=False)
             
-                writer.close()
+            # 🔥 CLAVE: mover puntero al inicio
+            output.seek(0)
             
-            st.session_state["reporte_excel"] = output.getvalue()
+            st.session_state["reporte_excel"] = output.read()
 
             contexto = {
                 'filas': df.to_dict('records'),
