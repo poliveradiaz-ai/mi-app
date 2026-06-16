@@ -67,6 +67,20 @@ with col2:
     st.markdown("📄 Informe Preliminar 2")
     preliminar2_word_file = st.file_uploader("Plantilla 2 (.docx)", type=["docx"], key="w2")
 
+st.markdown("## 📅 Fechas del informe")
+
+col_fecha1, col_fecha2 = st.columns(2)
+
+with col_fecha1:
+    fecha_corte = st.date_input(
+        "Fecha de corte"
+    )
+
+with col_fecha2:
+    fecha_inf_preliminar = st.date_input(
+        "Fecha informe preliminar"
+    )
+
 
 # =========================
 # INIT SESSION STATE
@@ -287,6 +301,10 @@ if st.button("🚀 Generar Reporte"):
                 ascending=[True, False]
             ).drop(columns=['orden_esp'])
 
+
+            fecha_corte_str = fecha_corte.strftime("%d/%m/%Y")
+            fecha_inf_preliminar_str = fecha_inf_preliminar.strftime("%d/%m/%Y")
+
            # =========================
             # 📊 GENERAR EXCEL
             # =========================
@@ -332,6 +350,8 @@ if st.button("🚀 Generar Reporte"):
                 'tabla_funcionarios_cn': tabla_funcionarios_cn.to_dict('records'),
                 'porc_escontrol_vs_controles': porc_escontrol_vs_controles,
                 'porc_escontrol_vs_cn': porc_escontrol_vs_cn,
+                'fecha_corte': fecha_corte_str,
+                'fecha_inf_preliminar': fecha_inf_preliminar_str,
             }
 
             if doc:
