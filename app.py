@@ -113,6 +113,12 @@ if st.button("🚀 Generar Reporte"):
                 df['Apellido Mat'].fillna('').astype(str)
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
+            df['Paciente'] = (
+                df['Nombre'].fillna('').astype(str) + ' ' +
+                df['Apell Paterno'].fillna('').astype(str) + ' ' +
+                df['Apell Materno'].fillna('').astype(str)
+            ).str.replace(r'\s+', ' ', regex=True).str.strip()
+
             df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
@@ -173,7 +179,57 @@ if st.button("🚀 Generar Reporte"):
 
             df_controles = df[df['Error_escontrol_menos_Inter'] == 1].copy()
             df_escn = df[df['Es_CN'] == 1].copy()
-           
+
+            detalle_control = (
+                df_controles
+                .groupby(
+                    [
+                        'Especialidad',
+                        'Funcionario',
+                        'Rut',
+                        'Paciente',
+                        'Fecha Atencion'
+                    ],
+                    dropna=False
+                )
+                .size()
+                .reset_index(name='Total')
+                .sort_values(
+                    [
+                        'Especialidad',
+                        'Funcionario',
+                        'Fecha Atencion',
+                        'Paciente'
+                    ]
+                )
+            )
+
+
+            detalle_escn = (
+                df_escn
+                .groupby(
+                    [
+                        'Especialidad',
+                        'Funcionario',
+                        'Rut',
+                        'Paciente',
+                        'Fecha Atencion'
+                    ],
+                    dropna=False
+                )
+                .size()
+                .reset_index(name='Total')
+                .sort_values(
+                    [
+                        'Especialidad',
+                        'Funcionario',
+                        'Fecha Atencion',
+                        'Paciente'
+                    ]
+                )
+            )
+
+            
             tabla = (
                 df_controles
                 .groupby("Especialidad")
@@ -241,8 +297,21 @@ if st.button("🚀 Generar Reporte"):
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 tabla_escn.to_excel(writer, sheet_name='ES_CN_Especialidad', index=False)
                 tabla_funcionarios_cn.to_excel(writer, sheet_name='ES_CN_Funcionario', index=False)
+            
+                detalle_escn.to_excel(
+                    writer,
+                    sheet_name='ES_CN_Detalle',
+                    index=False
+                )
+            
                 tabla.to_excel(writer, sheet_name='CONTROL_Especialidad', index=False)
                 tabla_funcionarios.to_excel(writer, sheet_name='CONTROL_Funcionario', index=False)
+            
+                detalle_control.to_excel(
+                    writer,
+                    sheet_name='CONTROL_Detalle',
+                    index=False
+                )
             
             # 🔥 CLAVE: mover puntero al inicio
             output.seek(0)
