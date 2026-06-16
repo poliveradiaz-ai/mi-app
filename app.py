@@ -304,7 +304,22 @@ if st.button("🚀 Generar Reporte"):
 
             fecha_corte_str = fecha_corte.strftime("%d/%m/%Y")
             fecha_inf_preliminar_str = fecha_inf_preliminar.strftime("%d/%m/%Y")
-
+            meses = {
+                1: "enero",
+                2: "febrero",
+                3: "marzo",
+                4: "abril",
+                5: "mayo",
+                6: "junio",
+                7: "julio",
+                8: "agosto",
+                9: "septiembre",
+                10: "octubre",
+                11: "noviembre",
+                12: "diciembre"
+            }
+            
+            mes_corte = meses[fecha_corte.month]
            # =========================
             # 📊 GENERAR EXCEL
             # =========================
@@ -352,6 +367,7 @@ if st.button("🚀 Generar Reporte"):
                 'porc_escontrol_vs_cn': porc_escontrol_vs_cn,
                 'fecha_corte': fecha_corte_str,
                 'fecha_inf_preliminar': fecha_inf_preliminar_str,
+                'mes_corte': mes_corte,
             }
 
             if doc:
