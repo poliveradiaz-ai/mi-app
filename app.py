@@ -153,10 +153,6 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado = total_escontrol - total_inter
             
-            st.write("total_escontrol:", total_escontrol)
-            st.write("total_inter:", total_inter)
-            st.write("resultado:", resultado)
-            st.write("filas df_controles:", len(df_controles))
 
             porc_escontrol_vs_controles = (
                 resultado / total_controles * 100
@@ -174,6 +170,19 @@ if st.button("🚀 Generar Reporte"):
                 (df['Es_control'] - df['Interconsulta_Valida']) > 0
             ).astype(int)
 
+            st.write("===== COMPROBACIÓN CONTROL =====")
+            st.write("total_escontrol:", total_escontrol)
+            st.write("total_inter:", total_inter)
+            st.write("resultado:", resultado)
+
+            cantidad_control_tabla = int(
+                (df['Error_escontrol_menos_Inter'] == 1).sum()
+            )
+
+            st.write(
+                "Registros que irán a las tablas CONTROL:",
+                cantidad_control_tabla
+            )
             df['Especialidad'] = (
                 df['Especialidad']
                 .astype(str)
