@@ -146,6 +146,30 @@ if st.button("🚀 Generar Reporte"):
                 how='left'
             )
 
+
+            
+            st.write("===== REVISIÓN DE INTERCONSULTAS =====")
+
+            revision = df[
+                (df['Actividad'].astype(str).str.strip().str.upper() == 'CONSULTA NUEVA') &
+                (df['Ic Asoc Hora'].astype(str).str.strip() == '-')
+            ][
+                [
+                    'Rut',
+                    'Especialidad',
+                    'Actividad',
+                    'Ic Asoc Hora',
+                    'Num Interconsulta',
+                    'Es_control',
+                    'Interconsulta_Valida'
+                ]
+            ].copy()
+            
+            st.dataframe(revision)
+
+            
+
+            
             df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
             df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
