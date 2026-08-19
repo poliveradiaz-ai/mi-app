@@ -152,7 +152,11 @@ if st.button("🚀 Generar Reporte"):
 
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado = total_escontrol - total_inter
-
+            
+            st.write("total_escontrol:", total_escontrol)
+            st.write("total_inter:", total_inter)
+            st.write("resultado:", resultado)
+            st.write("filas df_controles:", len(df_controles))
 
             porc_escontrol_vs_controles = (
                 resultado / total_controles * 100
