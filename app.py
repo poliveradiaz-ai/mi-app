@@ -153,7 +153,38 @@ if st.button("🚀 Generar Reporte"):
             total_inter = int(df['Interconsulta_Valida'].sum())
             resultado_escontrol = total_escontrol - total_inter
 
+            # =========================
+            # REVISION INTERCONSULTAS
+            # =========================
 
+            revision=df[
+             (df['Actividad'].astype(str).str.strip().str.upper()=='CONSULTA NUEVA')&
+             (df['Ic Asoc Hora'].astype(str).str.strip()=='-')
+            ][
+              [
+                  'Rut',
+                  'Especialidad',
+                  'Actividad',
+                  'Ic Asoc Hora',
+                  'Num Interconsulta',
+                  'Es_control',
+                  'Interconsulta_Valida'
+               ]
+            ].copy()
+
+            st.write("====REVISION DE INTERCONSULTAS====")
+            st.write("Cantidad de casos revisador:", len(revision))
+            st.write(
+                "Interconsultas válidas encontradas:",
+                int(revision['Interconsulta_Valida'].sum())
+            )
+            st.dataframe(revision)
+            
+            
+            
+
+
+            
             porc_escontrol_vs_controles = (
                 resultado_escontrol / total_controles * 100
             ) if total_controles != 0 else 0
