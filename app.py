@@ -54,11 +54,11 @@ def marcar_interconsulta_valida(fila):
     return 1 if (actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0) else 0
 
 df = pd.merge(
-                df,
-                 lp[['rut_puente','esp_puente','Num Interconsulta']],
-                 on=['rut_puente','esp_puente'],
-                 how='left'
-             )
+            df,
+            lp[['rut_puente','esp_puente','Num Interconsulta']],
+            on=['rut_puente','esp_puente'],
+            how='left'
+         )
 df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
 df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
