@@ -16,8 +16,8 @@ st.write("Sube los archivos base y opcionalmente las plantillas")
 # =========================
 st.markdown("## 📂 Archivos base")
 
-datos_file = st.file_uploader("📄 Subir datos.xlsx", type=["xlsx"])
-lp_file = st.file_uploader("📄 Subir Lista_Espera.xlsx", type=["xlsx"])
+datos_file = st.file_uploader("📄 Datos RCE Especialidades.xlsx", type=["xlsx"])
+lp_file = st.file_uploader("📄 Subir Lista de Espera.xlsx", type=["xlsx"])
 
 st.divider()
 
