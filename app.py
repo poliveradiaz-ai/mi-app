@@ -154,7 +154,7 @@ if st.button("🚀 Generar Reporte"):
 
 
             total_inter = int(df['Interconsulta_Valida'].sum())
-            resultado = total_escontrol - total_inter
+            resultado_escontrol = total_escontrol - total_inter
             
 
             # =========================
@@ -189,11 +189,11 @@ if st.button("🚀 Generar Reporte"):
 
             
             porc_escontrol_vs_controles = (
-                resultado / total_controles * 100
+                resultado_escontrol / total_controles * 100
             ) if total_controles != 0 else 0
             
             porc_escontrol_vs_cn = (
-                resultado / total_consultas_nuevas * 100
+                resultado_escontrol / total_consultas_nuevas * 100
             ) if total_escn != 0 else 0
 
             porc_escontrol_vs_controles = round(porc_escontrol_vs_controles, 1)
@@ -207,7 +207,7 @@ if st.button("🚀 Generar Reporte"):
             st.write("===== COMPROBACIÓN CONTROL =====")
             st.write("total_escontrol:", total_escontrol)
             st.write("total_inter:", total_inter)
-            st.write("resultado:", resultado)
+            st.write("resultado_escontrol:", resultado_escontrol)
 
             cantidad_control_tabla = int(
                 (df['Error_escontrol_menos_Inter'] == 1).sum()
@@ -405,7 +405,7 @@ if st.button("🚀 Generar Reporte"):
                 'total_controles': total_controles,
                 'total_consultas_nuevas': total_consultas_nuevas,
                 'total_inter': total_inter,
-                'resultado_es_control_menos_interconsulta': resultado,
+                'resultado_es_control_menos_interconsulta': resultado_escontrol,
                 'especialidades': tabla.to_dict('records'),
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
