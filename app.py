@@ -57,7 +57,12 @@ df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
 df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
-
+            df = pd.merge(
+                            df,
+                            lp[['rut_puente','esp_puente','Num Interconsulta']],
+                            on=['rut_puente','esp_puente'],
+                            how='left'
+                        )
 total_inter = int(df['Interconsulta_Valida'].sum())
 resultado_escontrol = total_escontrol - total_inter
             
