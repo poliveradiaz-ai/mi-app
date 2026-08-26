@@ -350,7 +350,9 @@ if st.button("🚀 Generar Reporte"):
             output.seek(0)
            
             st.session_state["reporte_excel"] = output.read()
-
+# =========================
+# CLAVES ARCHIVO WORD
+# =========================
             contexto = {
                 'filas': df.to_dict('records'),
                 'total_es_control': total_escontrol,
