@@ -53,46 +53,6 @@ def marcar_interconsulta_valida(fila):
 
     return 1 if (actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0) else 0
 
-df = pd.merge(
-            df,
-            lp[['rut_puente','esp_puente','Num Interconsulta']],
-            on=['rut_puente','esp_puente'],
-            how='left'
-         )
-df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
-
-df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
-
-
-total_inter = int(df['Interconsulta_Valida'].sum())
-resultado_escontrol = total_escontrol - total_inter
-            
-# =========================
-# 🔎 REVISIÓN INTERCONSULTAS
-# =========================
-            
-revision = df[
-    (df['Actividad'].astype(str).str.strip().str.upper() == 'CONSULTA NUEVA') &
-    (df['Ic Asoc Hora'].astype(str).str.strip() == '-')
-][
-    [
-        'Rut',
-        'Especialidad',
-        'Actividad',
-        'Ic Asoc Hora',
-        'Num Interconsulta',
-        'Es_control',
-        'Interconsulta_Valida'
-    ]
-].copy()
-            
-st.write("===== REVISIÓN DE INTERCONSULTAS =====")
-st.write("Cantidad de casos revisados:", len(revision))
-st.write(
-    "Interconsultas válidas encontradas:",
-    int(revision['Interconsulta_Valida'].sum())
-)
-st.dataframe(revision)
 
 # =========================
 # PLANTILLAS
@@ -160,7 +120,7 @@ if st.button("🚀 Generar Reporte"):
 
             total_escontrol = int(df['Es_control'].sum())
             total_escn = int(df['Es_CN'].sum())
-            
+           
             df['Funcionario'] = (
                 df['Nombres'].fillna('').astype(str) + ' ' +
                 df['Apellido Pat'].fillna('').astype(str) + ' ' +
@@ -186,40 +146,30 @@ if st.button("🚀 Generar Reporte"):
                 how='left'
             )
 
+            df['Num Interconsulta'] = df['Num Interconsulta'].fillna(0)
 
-            
-            
+            df['Interconsulta_Valida'] = df.apply(marcar_interconsulta_valida, axis=1)
 
-            
+            total_inter = int(df['Interconsulta_Valida'].sum())
+            resultado = total_escontrol - total_inter
+
+
             porc_escontrol_vs_controles = (
-                resultado_escontrol / total_controles * 100
+                resultado / total_controles * 100
             ) if total_controles != 0 else 0
-            
+           
             porc_escontrol_vs_cn = (
-                resultado_escontrol / total_consultas_nuevas * 100
+                resultado / total_consultas_nuevas * 100
             ) if total_escn != 0 else 0
 
             porc_escontrol_vs_controles = round(porc_escontrol_vs_controles, 1)
             porc_escontrol_vs_cn = round(porc_escontrol_vs_cn, 1)
 
-            
+           
             df['Error_escontrol_menos_Inter'] = (
                 (df['Es_control'] - df['Interconsulta_Valida']) > 0
             ).astype(int)
 
-            st.write("===== COMPROBACIÓN CONTROL =====")
-            st.write("total_escontrol:", total_escontrol)
-            st.write("total_inter:", total_inter)
-            st.write("resultado_escontrol:", resultado_escontrol)
-
-            cantidad_control_tabla = int(
-                (df['Error_escontrol_menos_Inter'] == 1).sum()
-            )
-
-            st.write(
-                "Registros que irán a las tablas CONTROL:",
-                cantidad_control_tabla
-            )
             df['Especialidad'] = (
                 df['Especialidad']
                 .astype(str)
@@ -293,7 +243,7 @@ if st.button("🚀 Generar Reporte"):
                 )
             )
 
-            
+           
             tabla = (
                 df_controles
                 .groupby("Especialidad")
@@ -368,37 +318,37 @@ if st.button("🚀 Generar Reporte"):
                 11: "noviembre",
                 12: "diciembre"
             }
-            
+           
             mes_corte = meses[fecha_corte.month]
            # =========================
             # 📊 GENERAR EXCEL
             # =========================
             from io import BytesIO
-            
+           
             output = BytesIO()
 
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 tabla_escn.to_excel(writer, sheet_name='ES_CN_Especialidad', index=False)
                 tabla_funcionarios_cn.to_excel(writer, sheet_name='ES_CN_Funcionario', index=False)
-            
+           
                 detalle_escn.to_excel(
                     writer,
                     sheet_name='ES_CN_Detalle',
                     index=False
                 )
-            
+           
                 tabla.to_excel(writer, sheet_name='CONTROL_Especialidad', index=False)
                 tabla_funcionarios.to_excel(writer, sheet_name='CONTROL_Funcionario', index=False)
-            
+           
                 detalle_control.to_excel(
                     writer,
                     sheet_name='CONTROL_Detalle',
                     index=False
                 )
-            
+           
             # 🔥 CLAVE: mover puntero al inicio
             output.seek(0)
-            
+           
             st.session_state["reporte_excel"] = output.read()
 
             contexto = {
@@ -408,7 +358,7 @@ if st.button("🚀 Generar Reporte"):
                 'total_controles': total_controles,
                 'total_consultas_nuevas': total_consultas_nuevas,
                 'total_inter': total_inter,
-                'resultado_es_control_menos_interconsulta': resultado_escontrol,
+                'resultado_es_control_menos_interconsulta': resultado,
                 'especialidades': tabla.to_dict('records'),
                 'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
                 'tabla_escn': tabla_escn.to_dict('records'),
@@ -434,7 +384,7 @@ if st.button("🚀 Generar Reporte"):
 
             st.success("✅ Reporte generado correctamente")
 
-    
+   
 
         except Exception as e:
             st.error(f"Error: {e}")
@@ -474,7 +424,7 @@ with colB:
 
 with colC:
     if st.session_state.get("reporte_excel"):
-    
+   
         st.download_button(
             "📥 Descargar Excel consolidado",
             data=st.session_state["reporte_excel"],
