@@ -226,13 +226,13 @@ if st.button("🚀 Generar Reporte"):
             porc_escontrol_vs_cn = round(porc_escontrol_vs_cn, 1)
 
             porc_escn_vs_consultas_nuevas = (
-                total_es_cn / total_consultas_nuevas * 100
+                total_escn / total_consultas_nuevas * 100
             ) if total_consultas_nuevas != 0 else 0
 
             porc_escn_vs_consultas_nuevas = round(porc_escn_vs_consultas_nuevas, 1)
 
             porc_escn_vs_total_controles = (
-                total_es_cn / total_controles * 100
+                total_escn / total_controles * 100
             ) if total_controles != 0 else 0
 
             porc_escn_vs_total_controles = round(porc_escn_vs_total_controles, 1)
