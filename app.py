@@ -225,6 +225,18 @@ if st.button("🚀 Generar Reporte"):
             porc_escontrol_vs_controles = round(porc_escontrol_vs_controles, 1)
             porc_escontrol_vs_cn = round(porc_escontrol_vs_cn, 1)
 
+            porc_escn_vs_consultas_nuevas = (
+                total_es_cn / total_consultas_nuevas * 100
+            ) if total_consultas_nuevas != 0 else 0
+
+            porc_escn_vs_consultas_nuevas = round(porc_escn_vs_consultas_nuevas, 1)
+
+            porc_escn_vs_total_controles = (
+                total_es_cn / total_controles * 100
+            ) if total_controles != 0 else 0
+
+             porc_escn_vs_total_controles = round(porc_escn_vs_total_controles, 1)
+
            
             df['Error_escontrol_menos_Inter'] = (
                 (df['Es_control'] - df['Interconsulta_Valida']) > 0
@@ -433,6 +445,8 @@ if st.button("🚀 Generar Reporte"):
                 'tabla_funcionarios_cn': tabla_funcionarios_cn.to_dict('records'),
                 'porc_escontrol_vs_controles': porc_escontrol_vs_controles,
                 'porc_escontrol_vs_cn': porc_escontrol_vs_cn,
+                'porc_escn_vs_consultas_nuevas': porc_escn_vs_consultas_nuevas,
+                'porc_escn_vs_controles': porc_escn_vs_total_controles,
                 'fecha_corte': fecha_corte_str,
                 'fecha_inf_preliminar': fecha_inf_preliminar_str,
                 'mes_corte': mes_corte,
