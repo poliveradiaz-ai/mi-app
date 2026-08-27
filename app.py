@@ -156,9 +156,7 @@ if st.button("🚀 Generar Reporte"):
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
             df['rut_puente'] = df['Rut Paciente'].apply(limpiar_rut_definitivo)
-            df['Rut Funcionario'] = df['Rut Funcionario'].apply(
-                limpiar_rut_definitivo
-            )
+            
 
 
 
