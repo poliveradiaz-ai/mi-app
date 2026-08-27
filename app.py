@@ -101,6 +101,25 @@ if st.button("🚀 Generar Reporte"):
 
         try:
             df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
+            # =========================
+            # IDENTIFICAR LOS DOS RUT
+            # =========================
+            
+            # Pandas puede tener columnas con nombres duplicados.
+            # Identificamos los dos RUT por posición.
+            indices_rut = [i for i, col in enumerate(df.columns) if col == 'Rut']
+            
+            if len(indices_rut) != 2:
+                raise ValueError(
+                    f"Se esperaban 2 columnas 'Rut', pero se encontraron {len(indices_rut)}"
+                )
+            
+            # Primer Rut = paciente
+            # Segundo Rut = funcionario
+            df.columns.values[indices_rut[0]] = 'Rut Paciente'
+            df.columns.values[indices_rut[1]] = 'Rut Funcionario'
+
+
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
 
             doc = DocxTemplate(word_file) if word_file else None
@@ -133,7 +152,8 @@ if st.button("🚀 Generar Reporte"):
                 df['Apell Materno'].fillna('').astype(str)
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
-            df['rut_puente'] = df['Rut'].apply(limpiar_rut_definitivo)
+            df['rut_puente'] = df['Rut Paciente'].apply(limpiar_rut_definitivo)
+
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
             df['esp_puente'] = df['Especialidad'].str.strip().str.upper()
@@ -162,14 +182,17 @@ if st.button("🚀 Generar Reporte"):
              (df['Ic Asoc Hora'].astype(str).str.strip()=='-')
             ][
               [
-                  'Rut',
-                  'Especialidad',
-                  'Actividad',
-                  'Ic Asoc Hora',
-                  'Num Interconsulta',
-                  'Es_control',
-                  'Interconsulta_Valida'
-               ]
+                'Rut Paciente',
+                'Rut Funcionario',
+                'Funcionario',
+                'Especialidad',
+                'Actividad',
+                'Ic Asoc Hora',
+                'Num Interconsulta',
+                'Es_control',
+                'Interconsulta_Valida'
+            ]
+
             ].copy()
 
             st.write("====REVISION DE INTERCONSULTAS====")
@@ -231,9 +254,10 @@ if st.button("🚀 Generar Reporte"):
                     [
                         'Especialidad',
                         'Funcionario',
-                        'Rut',
+                        'Rut Funcionario',
                         'Paciente',
-                        'Fecha Atencion'
+                        'Fecha Atencion',
+                        'Ic Asoc Hora'
                     ],
                     dropna=False
                 )
@@ -248,6 +272,7 @@ if st.button("🚀 Generar Reporte"):
                     ]
                 )
             )
+
 
 
             detalle_escn = (
@@ -256,9 +281,10 @@ if st.button("🚀 Generar Reporte"):
                     [
                         'Especialidad',
                         'Funcionario',
-                        'Rut',
+                        'Rut Funcionario',
                         'Paciente',
-                        'Fecha Atencion'
+                        'Fecha Atencion',
+                        'Ic Asoc Hora'
                     ],
                     dropna=False
                 )
@@ -273,6 +299,7 @@ if st.button("🚀 Generar Reporte"):
                     ]
                 )
             )
+
 
            
             tabla = (
