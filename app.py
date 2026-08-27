@@ -53,6 +53,34 @@ def marcar_interconsulta_valida(fila):
 
     return 1 if (actividad == 'CONSULTA NUEVA' and ic_asoc == '-' and num_ic != 0) else 0
 
+def agregar_totales_por_especialidad(tabla):
+    resultado = []
+
+    for especialidad, grupo in tabla.groupby(
+        'Especialidad',
+        sort=False
+    ):
+        # Mantener los funcionarios
+        for _, fila in grupo.iterrows():
+            resultado.append({
+                'Especialidad': fila['Especialidad'],
+                'Funcionario': fila['Funcionario'],
+                'total': fila['total'],
+                'es_total': False
+            })
+
+        # Total de la especialidad
+        total_especialidad = grupo['total'].sum()
+
+        resultado.append({
+            'Especialidad': f'TOTAL {especialidad}',
+            'Funcionario': '',
+            'total': total_especialidad,
+            'es_total': True
+        })
+
+    return resultado
+
 
 # =========================
 # PLANTILLAS
@@ -379,6 +407,22 @@ if st.button("🚀 Generar Reporte"):
                 ascending=[True, False]
             ).drop(columns=['orden_esp'])
 
+            # =========================
+            # TABLAS PARA WORD
+            # =========================
+            # Estas copias tienen los totales por especialidad.
+            # Las tablas originales NO se modifican y siguen siendo
+            # las que se utilizan para generar el Excel.
+            
+            tabla_funcionarios_word = agregar_totales_por_especialidad(
+                tabla_funcionarios
+            )
+            
+            tabla_funcionarios_cn_word = agregar_totales_por_especialidad(
+                tabla_funcionarios_cn
+            )
+
+
 
             fecha_corte_str = fecha_corte.strftime("%d/%m/%Y")
             fecha_inf_preliminar_str = fecha_inf_preliminar.strftime("%d/%m/%Y")
@@ -440,9 +484,9 @@ if st.button("🚀 Generar Reporte"):
                 'total_inter': total_inter,
                 'resultado_es_control_menos_interconsulta': resultado_escontrol,
                 'especialidades': tabla.to_dict('records'),
-                'tabla_funcionarios': tabla_funcionarios.to_dict('records'),
+                'tabla_funcionarios': tabla_funcionarios_word,
                 'tabla_escn': tabla_escn.to_dict('records'),
-                'tabla_funcionarios_cn': tabla_funcionarios_cn.to_dict('records'),
+                'tabla_funcionarios_cn': tabla_funcionarios_cn_word,
                 'porc_escontrol_vs_controles': porc_escontrol_vs_controles,
                 'porc_escontrol_vs_cn': porc_escontrol_vs_cn,
                 'porc_escn_vs_consultas_nuevas': porc_escn_vs_consultas_nuevas,
