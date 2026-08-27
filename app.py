@@ -100,24 +100,27 @@ if st.button("🚀 Generar Reporte"):
     if datos_file and lp_file:
 
         try:
-            df = pd.read_excel(datos_file, sheet_name="NOMINA CUADRATURA (REM7) SIN CO")
-            # =========================
-            # IDENTIFICAR LOS DOS RUT
-            # =========================
+            df = pd.read_excel(
+                datos_file,
+                sheet_name="NOMINA CUADRATURA (REM7) SIN CO"
+            )
             
-            # Pandas puede tener columnas con nombres duplicados.
-            # Identificamos los dos RUT por posición.
-            indices_rut = [i for i, col in enumerate(df.columns) if col == 'Rut']
+            # Pandas normalmente transforma columnas duplicadas:
+            # Rut -> Rut
+            # Rut -> Rut.1
             
-            if len(indices_rut) != 2:
+            if 'Rut' not in df.columns or 'Rut.1' not in df.columns:
                 raise ValueError(
-                    f"Se esperaban 2 columnas 'Rut', pero se encontraron {len(indices_rut)}"
+                    "No se encontraron las columnas 'Rut' y 'Rut.1'. "
+                    f"Columnas encontradas: {df.columns.tolist()}"
                 )
             
             # Primer Rut = paciente
-            # Segundo Rut = funcionario
-            df.columns.values[indices_rut[0]] = 'Rut Paciente'
-            df.columns.values[indices_rut[1]] = 'Rut Funcionario'
+            df = df.rename(columns={
+                'Rut': 'Rut Paciente',
+                'Rut.1': 'Rut Funcionario'
+            })
+
 
 
             lp = pd.read_excel(lp_file, sheet_name="Nomina Médico")
@@ -153,6 +156,11 @@ if st.button("🚀 Generar Reporte"):
             ).str.replace(r'\s+', ' ', regex=True).str.strip()
 
             df['rut_puente'] = df['Rut Paciente'].apply(limpiar_rut_definitivo)
+            df['Rut Funcionario'] = df['Rut Funcionario'].apply(
+                limpiar_rut_definitivo
+            )
+
+
 
             lp['rut_puente'] = lp['Rut'].apply(limpiar_rut_definitivo)
 
@@ -275,6 +283,7 @@ if st.button("🚀 Generar Reporte"):
 
 
 
+
             detalle_escn = (
                 df_escn
                 .groupby(
@@ -299,6 +308,7 @@ if st.button("🚀 Generar Reporte"):
                     ]
                 )
             )
+
 
 
            
