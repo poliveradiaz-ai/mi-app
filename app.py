@@ -287,7 +287,7 @@ if st.button("🚀 Generar Reporte"):
                 .groupby(
                     [
                         'Especialidad',
-                        'Rut Funcionario'
+                        'Rut Funcionario',
                         'Funcionario',
                         'Paciente',
                         'Fecha Atencion',
