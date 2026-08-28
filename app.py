@@ -97,7 +97,8 @@ with col2:
 
 st.markdown("## 📅 Fechas del informe")
 
-col_fecha1, col_fecha2 = st.columns(2)
+col_fecha1, col_fecha2, col_fecha3 = st.columns(3)
+
 
 with col_fecha1:
     fecha_corte = st.date_input(
