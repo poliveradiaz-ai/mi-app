@@ -109,6 +109,18 @@ with col_fecha2:
         "Fecha informe preliminar"
     )
 
+with col_fecha3:
+    incluir_fecha_envio_final = st.checkbox(
+        "¿Ingresar fecha de envío del informe final?"
+    )
+
+    if incluir_fecha_envio_final:
+        fecha_envio_informe_final = st.date_input(
+            "Fecha de envío del informe final"
+        )
+    else:
+        fecha_envio_informe_final = None
+
 
 # =========================
 # INIT SESSION STATE
@@ -426,6 +438,12 @@ if st.button("🚀 Generar Reporte"):
 
             fecha_corte_str = fecha_corte.strftime("%d/%m/%Y")
             fecha_inf_preliminar_str = fecha_inf_preliminar.strftime("%d/%m/%Y")
+
+            fecha_envio_informe_final_str = (
+                fecha_envio_informe_final.strftime("%d/%m/%Y")
+                if fecha_envio_informe_final is not None
+                else ""
+            )
             meses = {
                 1: "enero",
                 2: "febrero",
@@ -493,6 +511,7 @@ if st.button("🚀 Generar Reporte"):
                 'porc_escn_vs_controles': porc_escn_vs_total_controles,
                 'fecha_corte': fecha_corte_str,
                 'fecha_inf_preliminar': fecha_inf_preliminar_str,
+                'fecha_envio_informe_final': fecha_envio_informe_final_str,
                 'mes_corte': mes_corte,
             }
 
