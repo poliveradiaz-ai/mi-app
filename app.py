@@ -296,7 +296,7 @@ if st.button("🚀 Generar Reporte"):
            
                     # GINECOLOGIA
                     'GINECOLOGIA GENERAL ADULTO': 'GINECOLOGIA',
-                    'GINECOLOGÍA GENERAL ADULTO': 'GINECOLOGIA',
+                    'GINECOLOGÍA GENERAL': 'GINECOLOGIA',
                     'GINECOLOGÍA': 'GINECOLOGIA'
                 })
             )
