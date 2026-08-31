@@ -79,6 +79,18 @@ def agregar_totales_por_especialidad(tabla):
             'es_total': True
         })
 
+    # =========================
+    # TOTAL GENERAL
+    # =========================
+    total_general = tabla['total'].sum()
+
+    resultado.append({
+        'Especialidad': 'TOTAL GENERAL',
+        'Funcionario': '',
+        'total': total_general,
+        'es_total': True
+    })
+
     return resultado
 
 
