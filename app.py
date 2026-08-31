@@ -92,6 +92,19 @@ def agregar_totales_por_especialidad(tabla):
     })
 
     return resultado
+    
+def agregar_total_general(tabla, columna_total):
+    resultado = tabla.to_dict('records')
+
+    total_general = tabla[columna_total].sum()
+
+    resultado.append({
+        'Especialidad': 'TOTAL GENERAL',
+        columna_total: total_general
+    })
+
+    return resultado
+
 
 
 # =========================
@@ -447,6 +460,10 @@ if st.button("🚀 Generar Reporte"):
                 tabla_funcionarios_cn
             )
 
+            tabla_escn_word = agregar_total_general(
+                tabla_escn,
+                'cantidad'
+            )
 
 
             fecha_corte_str = fecha_corte.strftime("%d/%m/%Y")
@@ -516,7 +533,7 @@ if st.button("🚀 Generar Reporte"):
                 'resultado_es_control_menos_interconsulta': resultado_escontrol,
                 'especialidades': tabla.to_dict('records'),
                 'tabla_funcionarios': tabla_funcionarios_word,
-                'tabla_escn': tabla_escn.to_dict('records'),
+                'tabla_escn': tabla_escn_word,
                 'tabla_funcionarios_cn': tabla_funcionarios_cn_word,
                 'porc_escontrol_vs_controles': porc_escontrol_vs_controles,
                 'porc_escontrol_vs_cn': porc_escontrol_vs_cn,
