@@ -540,7 +540,7 @@ if st.button("🚀 Generar Reporte"):
                 'porc_escn_vs_consultas_nuevas': porc_escn_vs_consultas_nuevas,
                 'porc_escn_vs_controles': porc_escn_vs_total_controles,
                 'fecha_corte': fecha_corte_str,
-                'fecha_inf_preliminar': fecha_inf_preliminar_str,
+                'fecha_envio_preliminar': fecha_inf_preliminar_str,
                 'fecha_envio_informe_final': fecha_envio_informe_final_str,
                 'mes_corte': mes_corte,
             }
