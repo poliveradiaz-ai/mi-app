@@ -275,7 +275,14 @@ if st.button("🚀 Generar Reporte"):
             )
             st.dataframe(revision)
             
+            # =========================
+            # DETALLE INTERCONSULTAS VÁLIDAS
+            # =========================
             
+            detalle_interconsultas_validas = revision[
+                revision['Interconsulta_Valida'] > 0
+            ].copy()
+
             
 
 
@@ -517,7 +524,21 @@ if st.button("🚀 Generar Reporte"):
                     sheet_name='CONTROL_Detalle',
                     index=False
                 )
-           
+                # =========================
+                # NUEVA HOJA:
+                # INTERCONSULTAS VÁLIDAS
+                # =========================
+            
+                detalle_interconsultas_validas.to_excel(
+                    writer,
+                    sheet_name='INTERCONSULTAS_VALIDAS',
+                    index=False
+                )
+
+
+
+
+               
             # 🔥 CLAVE: mover puntero al inicio
             output.seek(0)
            
