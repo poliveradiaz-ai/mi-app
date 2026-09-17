@@ -132,7 +132,7 @@ with col_fecha1:
 
 with col_fecha2:
     fecha_inf_preliminar = st.date_input(
-        "Fecha informe preliminar"
+        "Fecha envio informe preliminar"
     )
 
 with col_fecha3:
