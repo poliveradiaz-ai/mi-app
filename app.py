@@ -339,6 +339,7 @@ if st.button("🚀 Generar Reporte"):
                         'Especialidad',
                         'Rut Funcionario',
                         'Funcionario',
+                        'Rut Paciente',
                         'Paciente',
                         'Fecha Atencion',
                         'Ic Asoc Hora'
@@ -367,6 +368,7 @@ if st.button("🚀 Generar Reporte"):
                         'Especialidad',
                         'Rut Funcionario',
                         'Funcionario',
+                        'Rut Paciente',
                         'Paciente',
                         'Fecha Atencion',
                         'Ic Asoc Hora'
