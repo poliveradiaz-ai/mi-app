@@ -255,6 +255,7 @@ if st.button("🚀 Generar Reporte"):
             ][
               [
                 'Rut Paciente',
+                'Paciente',
                 'Rut Funcionario',
                 'Funcionario',
                 'Especialidad',
