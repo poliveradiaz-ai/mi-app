@@ -254,15 +254,12 @@ if st.button("🚀 Generar Reporte"):
              (df['Ic Asoc Hora'].astype(str).str.strip()=='-')
             ][
               [
-                'Rut Paciente',
-                'Paciente',
                 'Rut Funcionario',
                 'Funcionario',
                 'Especialidad',
-                'Actividad',
-                'Ic Asoc Hora',
+                'Rut Paciente',
+                'Paciente',
                 'Num Interconsulta',
-                'Es_control',
                 'Interconsulta_Valida'
             ]
 
