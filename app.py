@@ -259,6 +259,7 @@ if st.button("🚀 Generar Reporte"):
                 'Especialidad',
                 'Rut Paciente',
                 'Paciente',
+                'Fecha Atencion',
                 'Num Interconsulta',
                 'Interconsulta_Valida'
             ]
